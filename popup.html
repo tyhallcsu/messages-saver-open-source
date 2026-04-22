@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <title>Open Chat Archiver</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Open Chat Archiver</h1>
+    <p class="sub">Local export of your own conversation</p>
+  </header>
+
+  <section class="status-card" aria-live="polite">
+    <div class="status-row">
+      <span class="dot" id="dot" aria-hidden="true"></span>
+      <span id="statusText">Not connected to a supported page</span>
+    </div>
+    <div class="counts">
+      <div><span class="num" id="captured">0</span><span class="lbl">captured</span></div>
+      <div><span class="num" id="filtered">0</span><span class="lbl">in range</span></div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <button id="toggleCapture" class="primary" type="button">Start capture</button>
+    <button id="clearBuffer" class="secondary" type="button">Clear</button>
+  </section>
+
+  <section class="range">
+    <h2>Date range (optional)</h2>
+    <div class="range-row">
+      <label>
+        <span>From</span>
+        <input type="date" id="fromDate" />
+      </label>
+      <label>
+        <span>To</span>
+        <input type="date" id="toDate" />
+      </label>
+    </div>
+  </section>
+
+  <section class="export">
+    <h2>Export</h2>
+    <div class="fmt-row">
+      <label><input type="radio" name="fmt" value="json" checked /> JSON</label>
+      <label><input type="radio" name="fmt" value="csv" /> CSV</label>
+      <label><input type="radio" name="fmt" value="txt" /> TXT</label>
+      <label><input type="radio" name="fmt" value="html" /> HTML</label>
+    </div>
+    <button id="exportBtn" class="primary" type="button">Download export</button>
+  </section>
+
+  <section class="hint" id="hintBox">
+    <p><strong>How to use:</strong> open a conversation on Messenger or Facebook, click <em>Start capture</em>, then scroll up slowly to load older messages. Everything stays on your device.</p>
+  </section>
+
+  <footer>
+    <a href="options.html" target="_blank" rel="noopener">Options</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/" target="_blank" rel="noopener" id="repoLink">Source</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

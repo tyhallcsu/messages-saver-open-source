@@ -1,0 +1,79 @@
+{
+  "schema": "open-chat-archiver/1",
+  "exportedAt": "2026-04-22T14:03:10.412Z",
+  "meta": {
+    "threadTitle": "Weekend Camping Trip",
+    "source": "https://www.example.test",
+    "capturedAt": "2026-04-22T14:02:58.101Z",
+    "totalCaptured": 8,
+    "filter": { "fromDate": "", "toDate": "" },
+    "note": "This is a synthetic sample. Names and content are fictional and used only to demonstrate the export format."
+  },
+  "messageCount": 8,
+  "messages": [
+    {
+      "sender": "Ada Example",
+      "text": "Hey, are we still good for Saturday?",
+      "timestamp": "2026-04-18T09:12:00.000Z",
+      "direction": "incoming",
+      "reactions": [],
+      "attachments": []
+    },
+    {
+      "sender": "You",
+      "text": "Yes! I reserved site 14 at the state park.",
+      "timestamp": "2026-04-18T09:14:12.000Z",
+      "direction": "outgoing",
+      "reactions": ["thumbs up reaction"],
+      "attachments": []
+    },
+    {
+      "sender": "Ada Example",
+      "text": "Perfect. I'll bring the tent and the stove.",
+      "timestamp": "2026-04-18T09:14:55.000Z",
+      "direction": "incoming",
+      "reactions": [],
+      "attachments": []
+    },
+    {
+      "sender": "You",
+      "text": "I'll handle food. Any dietary stuff?",
+      "timestamp": "2026-04-18T09:15:30.000Z",
+      "direction": "outgoing",
+      "reactions": [],
+      "attachments": []
+    },
+    {
+      "sender": "Ada Example",
+      "text": "Nope, all good.",
+      "timestamp": "2026-04-18T09:16:02.000Z",
+      "direction": "incoming",
+      "reactions": ["heart reaction"],
+      "attachments": []
+    },
+    {
+      "sender": "Ada Example",
+      "text": "Sharing the trail map so we're on the same page.",
+      "timestamp": "2026-04-18T09:16:40.000Z",
+      "direction": "incoming",
+      "reactions": [],
+      "attachments": ["https://example.test/trail-map.pdf"]
+    },
+    {
+      "sender": "You",
+      "text": "Got it. Meeting at the trailhead at 8am?",
+      "timestamp": "2026-04-18T09:17:12.000Z",
+      "direction": "outgoing",
+      "reactions": [],
+      "attachments": []
+    },
+    {
+      "sender": "Ada Example",
+      "text": "8am works. See you Saturday!",
+      "timestamp": "2026-04-18T09:17:45.000Z",
+      "direction": "incoming",
+      "reactions": [],
+      "attachments": []
+    }
+  ]
+}

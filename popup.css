@@ -1,0 +1,230 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6572;
+  --border: #e4e7eb;
+  --accent: #2f6feb;
+  --accent-fg: #ffffff;
+  --danger: #c0392b;
+  --ok: #1e8e3e;
+  --idle: #8a8f98;
+  --card: #f7f9fc;
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15181d;
+    --fg: #e8ecf1;
+    --muted: #9aa3af;
+    --border: #2a2f37;
+    --accent: #4c8bf5;
+    --card: #1c2026;
+    --idle: #6b7280;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+body {
+  width: 340px;
+  padding: 12px 14px 14px;
+}
+
+header h1 {
+  font-size: 15px;
+  margin: 0 0 2px;
+  font-weight: 600;
+}
+
+header .sub {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+.status-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--idle);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.02);
+}
+
+.dot.active { background: var(--ok); animation: pulse 1.6s ease-in-out infinite; }
+.dot.error  { background: var(--danger); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30,142,62,0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(30,142,62,0); }
+}
+
+.counts {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.counts .num {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+.counts .lbl {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+button {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+
+button.primary:hover { filter: brightness(1.05); }
+
+button.secondary {
+  background: transparent;
+}
+
+.range-row {
+  display: flex;
+  gap: 8px;
+}
+
+.range-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+input[type="date"] {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.fmt-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fmt-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.fmt-row input[type="radio"] { margin: 0; }
+
+.hint {
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: var(--card);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.hint p { margin: 0; }
+.hint strong { color: var(--fg); }
+
+footer {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--accent); text-decoration: underline; }
+
+footer .sep { margin: 0 6px; opacity: 0.5; }
+
+.flash {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+
+.flash.ok  { background: rgba(30,142,62,0.12); color: var(--ok); }
+.flash.err { background: rgba(192,57,43,0.12); color: var(--danger); }

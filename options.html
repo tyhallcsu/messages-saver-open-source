@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <title>Open Chat Archiver — Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Open Chat Archiver</h1>
+      <p class="lede">Settings for local conversation export. All settings stay on this device.</p>
+    </header>
+
+    <section>
+      <h2>Default export format</h2>
+      <div class="row">
+        <label><input type="radio" name="format" value="json" /> JSON <em>— structured, lossless</em></label>
+        <label><input type="radio" name="format" value="csv"  /> CSV <em>— spreadsheet friendly</em></label>
+        <label><input type="radio" name="format" value="txt"  /> TXT <em>— plain text transcript</em></label>
+        <label><input type="radio" name="format" value="html" /> HTML <em>— readable standalone file</em></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Filename template</h2>
+      <p class="help">Tokens: <code>{thread}</code>, <code>{date}</code>, <code>{time}</code>, <code>{count}</code>, <code>{ext}</code>.</p>
+      <input type="text" id="filenameTemplate" spellcheck="false" />
+    </section>
+
+    <section>
+      <h2>Capture behavior</h2>
+
+      <label class="row-single">
+        <span>Scroll pacing while capturing</span>
+        <select id="pacing">
+          <option value="off">Off — I'll scroll manually</option>
+          <option value="slow">Slow (6 s between scrolls)</option>
+          <option value="normal">Normal (3 s)</option>
+          <option value="fast">Fast (1 s)</option>
+        </select>
+      </label>
+      <p class="help">When enabled, the extension will gently scroll the message list upward to load older messages. Manual scrolling always works regardless.</p>
+
+      <label class="row-single">
+        <span>Max auto-scrolls per session</span>
+        <input type="number" id="maxScrolls" min="0" max="100000" step="50" />
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" id="captureReactions" />
+        <span>Capture reaction emoji on messages (when visible)</span>
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" id="captureAttachmentRefs" />
+        <span>Capture attachment URLs already visible in the DOM (no download)</span>
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" id="collapseConsecutive" />
+        <span>Collapse consecutive messages from the same sender in TXT/HTML exports</span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Privacy</h2>
+      <ul class="bullets">
+        <li>Everything runs locally in your browser. No remote servers are contacted by this extension.</li>
+        <li>The extension only reads what is already rendered in your own DOM — it does not call private APIs.</li>
+        <li>Exports are saved through the browser's standard Downloads API.</li>
+      </ul>
+      <p class="help">See the <a href="#" id="privacyLink">PRIVACY.md</a> file in the source repository for full details.</p>
+    </section>
+
+    <section class="actions">
+      <button id="save" class="primary" type="button">Save settings</button>
+      <button id="reset" class="secondary" type="button">Reset to defaults</button>
+      <span id="savedMsg" class="saved" hidden>Saved.</span>
+    </section>
+
+    <footer>
+      <span>Version <span id="versionLabel">0.1.0</span></span>
+      <span class="sep">·</span>
+      <a href="https://github.com/" target="_blank" rel="noopener" id="repoLink">Source code</a>
+    </footer>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>

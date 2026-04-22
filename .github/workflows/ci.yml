@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate manifest + sample JSON
+        run: |
+          python3 -c "import json; json.load(open('manifest.json'))"
+          python3 -c "import json; json.load(open('sample-data/sample-conversation.json'))"
+
+      - name: Regenerate icons and diff
+        run: |
+          python3 scripts/generate_icons.py
+          git diff --exit-code icons/ || {
+            echo "::error::Icons on disk do not match scripts/generate_icons.py output. Run: python3 scripts/generate_icons.py";
+            exit 1;
+          }
+
+      - name: Enforce no network APIs in extension code
+        run: |
+          set -eu
+          pattern='fetch\(|XMLHttpRequest|WebSocket\(|navigator\.sendBeacon|new EventSource'
+          if grep -E -n "$pattern" background.js content.js popup.js options.js; then
+            echo "::error::Disallowed network API usage detected in extension code. See CLAUDE.md."
+            exit 1
+          fi
+
+      - name: Enforce minimal host permissions
+        run: |
+          set -eu
+          if python3 -c "import json,sys; m=json.load(open('manifest.json')); hp=m.get('host_permissions',[]); bad=[h for h in hp if '<all_urls>' in h or h.startswith('*://')]; sys.exit(1 if bad else 0)"; then
+            echo "host_permissions are scoped — ok"
+          else
+            echo "::error::host_permissions must not include <all_urls> or *://*"
+            exit 1
+          fi

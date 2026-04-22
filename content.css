@@ -1,0 +1,9 @@
+/*
+ * The content script performs its work silently and does not inject any
+ * UI into the host page. This stylesheet is a placeholder so the manifest's
+ * web_accessible_resources declaration has something to ship; keeping it
+ * present lets future versions add an optional on-page indicator without a
+ * manifest bump.
+ */
+
+/* intentionally empty */

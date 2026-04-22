@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Extension packaging artifacts
+*.zip
+*.crx
+*.pem
+
+# Python (icon generator only uses stdlib, but just in case)
+__pycache__/
+*.pyc
+
+# Local notes
+NOTES.md
