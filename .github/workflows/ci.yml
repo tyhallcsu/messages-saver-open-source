@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -22,6 +27,37 @@ jobs:
         run: |
           python3 -c "import json; json.load(open('manifest.json'))"
           python3 -c "import json; json.load(open('sample-data/sample-conversation.json'))"
+
+      - name: node --check on every extension JS file
+        run: |
+          set -eu
+          for f in background.js content.js popup.js options.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+
+      - name: Verify every manifest path exists on disk
+        run: |
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+            const paths = [];
+            if (m.action && m.action.default_popup) paths.push(m.action.default_popup);
+            for (const sz of Object.keys((m.action && m.action.default_icon) || {})) paths.push(m.action.default_icon[sz]);
+            for (const sz of Object.keys(m.icons || {})) paths.push(m.icons[sz]);
+            if (m.background && m.background.service_worker) paths.push(m.background.service_worker);
+            if (m.options_ui && m.options_ui.page) paths.push(m.options_ui.page);
+            for (const cs of m.content_scripts || []) {
+              for (const j of cs.js || []) paths.push(j);
+              for (const c of cs.css || []) paths.push(c);
+            }
+            for (const w of m.web_accessible_resources || []) for (const r of w.resources || []) paths.push(r);
+            let bad = 0;
+            for (const p of [...new Set(paths)]) {
+              if (!fs.existsSync(p)) { console.error("MISSING:", p); bad++; }
+            }
+            process.exit(bad ? 1 : 0);
+          '
 
       - name: Regenerate icons and diff
         run: |
@@ -34,7 +70,7 @@ jobs:
       - name: Enforce no network APIs in extension code
         run: |
           set -eu
-          pattern='fetch\(|XMLHttpRequest|WebSocket\(|navigator\.sendBeacon|new EventSource'
+          pattern='fetch\(|XMLHttpRequest|WebSocket\(|navigator\.sendBeacon|new EventSource|importScripts'
           if grep -E -n "$pattern" background.js content.js popup.js options.js; then
             echo "::error::Disallowed network API usage detected in extension code. See CLAUDE.md."
             exit 1
@@ -48,4 +84,12 @@ jobs:
           else
             echo "::error::host_permissions must not include <all_urls> or *://*"
             exit 1
+          fi
+
+      - name: Enforce manifest version aligns with CHANGELOG (advisory)
+        run: |
+          set -eu
+          version=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::warning::CHANGELOG.md has no '## [$version]' section. Consider adding one before tagging a release."
           fi
