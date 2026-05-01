@@ -2,7 +2,7 @@
 
 <img src="icons/icon-128.png" alt="Open Chat Archiver" width="128" height="128" />
 
-# Open Chat Archiver
+# Open Chat Archiver (FB Messages Downloader)
 
 **A dependency-free Chrome extension that exports your own Facebook / Messenger conversations to JSON, CSV, TXT, or HTML — locally, with no network egress.**
 
