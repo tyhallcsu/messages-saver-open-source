@@ -1,157 +1,148 @@
-# Open Chat Archiver
+<div align="center">
+  <img src="./assets/hero.svg" alt="Open Chat Archiver" width="900">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![No dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#)
-[![No tracking](https://img.shields.io/badge/tracking-none-brightgreen.svg)](PRIVACY.md)
-[![CI](https://img.shields.io/badge/CI-validate-lightgrey.svg)](.github/workflows/ci.yml)
+  <h1>Open Chat Archiver</h1>
 
-A small, open-source Chrome extension (Manifest V3) that lets you save a
-local copy of a conversation you are logged into on Facebook or Messenger.
-It works purely by reading the messages that are already rendered in your
-own browser — **no private APIs, no external servers, no tracking**.
+  <p>A dependency-free Manifest V3 Chrome extension that exports your own Facebook / Messenger conversations to JSON, CSV, TXT, or HTML using DOM-only capture.</p>
 
-Exports are written to your computer via the browser's standard Downloads
-prompt. The extension has no sign-up, no paid tier, and no feature flags.
+  <p>
+    <a href="https://github.com/tyhallcsu/messages-saver-open-source/actions/workflows/ci.yml"><img src="https://github.com/tyhallcsu/messages-saver-open-source/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/tyhallcsu/messages-saver-open-source?color=2563eb" alt="MIT License"></a>
+    <a href="https://developer.chrome.com/docs/extensions/mv3/intro/"><img src="https://img.shields.io/badge/Chrome-Manifest%20V3-1d4ed8" alt="Chrome Manifest V3"></a>
+    <a href="./PRIVACY.md"><img src="https://img.shields.io/badge/network-egress-none-16a34a" alt="No network egress"></a>
+  </p>
 
-> This project is an independent, clean-room reimplementation. It is not
-> affiliated with, endorsed by, or derived from Meta Platforms, Inc., nor
-> from any commercial "Messages Saver" product. "Facebook" and "Messenger"
-> are trademarks of their respective owners and are used here only to
-> describe the sites this tool can read from.
+  <p>
+    <a href="#install">Install</a> /
+    <a href="#usage">Usage</a> /
+    <a href="#export-formats">Formats</a> /
+    <a href="#privacy-and-guardrails">Privacy</a> /
+    <a href="#development">Development</a>
+  </p>
+</div>
 
-## Features
+Open Chat Archiver runs entirely inside your browser session. It reads only the conversation content already rendered in your own Messenger or Facebook tab, keeps settings in `chrome.storage.local`, and writes exports through Chrome's Downloads API.
 
-- **Export formats**: JSON (structured, lossless), CSV, plain TXT, and
-  self-contained HTML.
-- **Date range filter**: restrict the export to a window of dates.
-- **DOM-based capture**: uses a `MutationObserver` on the conversation
-  region, so it only sees what *you* see.
-- **Optional paced auto-scroll**: helps load older messages without
-  hammering the page.
-- **Configurable**: format, filename template, pacing, reactions,
-  attachment URLs.
-- **Local-only**: settings are stored with `chrome.storage.local`. The
-  service worker never opens a network connection.
+> This project is an independent clean-room implementation. It is not affiliated with, endorsed by, or derived from Meta Platforms, Inc. "Facebook" and "Messenger" are used only to describe the sites the extension can read from.
 
-## Install (developer mode)
+## At a glance
 
-1. Clone this repository.
-2. In Chrome, open `chrome://extensions`.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select this folder.
-5. Pin the icon to your toolbar if you like.
+| Surface | Value |
+| --- | --- |
+| Status | Pre-1.0 (`manifest.json` version `0.1.0`) |
+| Platform | Chrome extension, Manifest V3 |
+| Capture model | DOM-only, rendered messages only |
+| Export formats | JSON, CSV, TXT, HTML |
+| Local storage | `chrome.storage.local` |
+| Permissions | `storage`, `downloads`, `activeTab`, scoped Facebook / Messenger hosts |
+| Release flow | Tag-driven GitHub Actions packaging |
+| License | MIT |
 
-If you change any files, click the extension's *Reload* button on
-`chrome://extensions`.
+## Highlights
+
+- Export a captured conversation as JSON, CSV, TXT, or standalone HTML.
+- Filter by date range before download without sending data anywhere.
+- Use optional paced auto-scroll to load older messages more gently.
+- Capture visible reactions and attachment URLs without downloading attachment bytes.
+- Keep the extension fully local: no analytics, no feature flags, no remote endpoints, no runtime dependencies.
+
+## Preview
+
+<p align="center">
+  <img src="./assets/overview.svg" alt="Popup and export preview illustration" width="920">
+</p>
+
+## Install
+
+There is no build step. Load the extension source directly in Chrome.
+
+```bash
+git clone https://github.com/tyhallcsu/messages-saver-open-source.git
+cd messages-saver-open-source
+```
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select this repository folder.
+
+The repository also includes a tag-driven release workflow in [`.github/workflows/release.yml`](./.github/workflows/release.yml). Once a `v*` tag is pushed, GitHub Actions packages a versioned ZIP and SHA256 checksum for the release page.
 
 ## Usage
 
-1. Open a conversation on `messenger.com` or `www.facebook.com/messages/...`.
-2. Click the extension icon → **Start capture**.
-3. Scroll up through the conversation to load older messages (or enable
-   *paced auto-scroll* in Options).
-4. Watch the **captured** counter climb in the popup.
-5. Optional: pick a **From** / **To** date range.
-6. Pick a format (JSON, CSV, TXT, HTML) and click **Download export**.
-7. Confirm the browser's Save dialog.
+1. Open a conversation on `https://www.messenger.com/t/<thread>` or `https://www.facebook.com/messages/t/<thread>`.
+2. Click the extension icon and choose **Start capture**.
+3. Scroll upward to load older messages, or enable paced auto-scroll in **Options**.
+4. Optionally set **From** and **To** dates in the popup.
+5. Choose an export format and click **Download export**.
 
-When you're done, click **Stop capture** and (optionally) **Clear** to
-reset the in-memory buffer.
+The full end-user walkthrough lives in [docs/USAGE.md](./docs/USAGE.md).
 
-## Formats
+## Export formats
 
-| Format | When to use | Notes |
-| ------ | ----------- | ----- |
-| JSON   | Archival, programmatic access | Schema: `open-chat-archiver/1`. See `sample-data/sample-conversation.json`. |
-| CSV    | Spreadsheets, diffs | One message per row; UTF-8 with CRLF terminators. |
-| TXT    | Human-readable transcripts | Optional consecutive-sender collapsing. |
-| HTML   | Self-contained viewable file | Plain CSS, no external assets. |
+| Format | Best for | Sample |
+| --- | --- | --- |
+| JSON | Archival, scripting, schema-stable exports | [sample-conversation.json](./sample-data/sample-conversation.json) |
+| CSV | Spreadsheets, filtering, diffs | [sample-conversation.csv](./sample-data/sample-conversation.csv) |
+| TXT | Readable transcripts | [sample-conversation.txt](./sample-data/sample-conversation.txt) |
+| HTML | Standalone viewing and printing | [sample-conversation.html](./sample-data/sample-conversation.html) |
 
-## Privacy
+JSON exports carry the schema string `open-chat-archiver/1`. The canonical shape is documented in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and mirrored in [sample-data/README.md](./sample-data/README.md).
 
-See [PRIVACY.md](PRIVACY.md). The short version:
+## How it works
 
-- The extension runs entirely on your device.
-- It reads only from the DOM of the active conversation tab.
-- It never makes network requests of its own.
-- Exports are plain files written through the browser's Downloads API.
+The extension splits work across three contexts:
 
-## Architecture
+1. `content.js` reads only the rendered conversation DOM, extracts messages, and maintains the in-tab capture buffer.
+2. `popup.js` lets you start capture, filter by date, and request an export from the active tab.
+3. `background.js` serializes the filtered messages and hands the result to `chrome.downloads.download()` as a local `data:` URL.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Briefly:
+For the fuller data flow, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
-```
-┌──────────────┐  messages   ┌──────────────┐   download url
-│  popup.html  │◀──────────▶│  content.js  │
-│  popup.js    │             │              │
-└─────┬────────┘             └──────────────┘
-      │                              ▲
-      │ DOWNLOAD_EXPORT              │ DOM mutations
-      ▼                              │
-┌──────────────┐                     │
-│ background.js│ ──► chrome.downloads.download()
-└──────────────┘
-```
+## Privacy and guardrails
 
-## Repo layout
+- No network egress. The extension does not call `fetch`, `XMLHttpRequest`, `WebSocket`, `navigator.sendBeacon`, or any remote script source.
+- No private API scraping. The content script reads only the DOM already visible in your signed-in browser session.
+- No broad permissions. Host permissions are limited to the Facebook / Messenger surfaces needed for capture.
+- No attachment downloading. Exports record visible attachment URLs only.
 
-```
-messages-saver-open-source/
-├── manifest.json
-├── background.js          # service worker: serializers + download
-├── content.js             # DOM capture + filter + export buffer
-├── content.css
-├── popup.html / .css / .js
-├── options.html / .css / .js
-├── icons/                 # 16 / 48 / 128 px, generated by scripts/generate_icons.py
-├── scripts/
-│   └── generate_icons.py
-├── sample-data/           # synthetic example exports
-├── docs/
-│   ├── ARCHITECTURE.md
-│   └── USAGE.md
-├── LICENSE (MIT)
-├── PRIVACY.md
-├── CHANGELOG.md
-└── README.md
-```
+The ground-truth policy lives in [PRIVACY.md](./PRIVACY.md). Security reporting instructions live in [SECURITY.md](./SECURITY.md).
 
 ## Development
 
-There is no build step. Edit the source files and reload the extension.
+Edit the source files and reload the unpacked extension in Chrome. There is no bundler or build pipeline.
 
-Regenerate icons after editing `scripts/generate_icons.py`:
+Regenerate icons after changing the icon script:
 
 ```bash
 python3 scripts/generate_icons.py
 ```
 
-If you make changes to the content script's extraction logic, test
-against a real conversation and also open
-`sample-data/sample-conversation.json` to sanity-check the schema.
+Build the release bundle locally:
 
-## Limitations
+```bash
+python3 scripts/build_release.py --out-dir dist
+```
 
-- Facebook/Messenger ships DOM changes frequently. Selectors are chosen
-  for stability (ARIA roles, `<time>`, generic `[role=row]`) but may
-  still drift. Please open an issue with a screenshot if capture stops
-  working.
-- The extension only sees rendered messages. Media is referenced by URL,
-  not downloaded.
-- Very large conversations (tens of thousands of messages) may slow down
-  the page as the DOM grows. That is a characteristic of the host site,
-  not of this extension.
+The CI workflow validates the manifest, sample exports, icon generation, release bundle creation, forbidden network APIs, and host permission scope. See [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+
+## Project layout
+
+```text
+manifest.json            MV3 manifest and extension metadata
+background.js            Service worker serializers and download handoff
+content.js               DOM capture, filtering, and tab-local buffer
+popup.*                  Toolbar popup UI
+options.*                Options page UI
+icons/                   Generated extension icons
+scripts/                 Stdlib-only maintenance scripts
+sample-data/             Synthetic example exports
+docs/                    Architecture and usage notes
+```
 
 ## Contributing
 
-Issues and pull requests welcome. Please:
-
-- Keep the extension dependency-free.
-- Do not add trackers, analytics, or remote endpoints.
-- Do not add any code that reads private tokens or auth cookies.
-- Describe the behavior change in the PR and attach a before/after
-  screenshot when UI is affected.
+Public contributions are welcome as long as they preserve the local-only, dependency-free design. Start with [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Author
 
@@ -159,4 +150,4 @@ Maintained by **sharmanhall**.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Released under the MIT License. See [LICENSE](./LICENSE).

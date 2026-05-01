@@ -10,6 +10,7 @@ Files:
 - `sample-conversation.json` — the canonical JSON schema (`open-chat-archiver/1`).
 - `sample-conversation.csv` — the CSV produced by the CSV serializer.
 - `sample-conversation.txt` — the plain-text transcript.
+- `sample-conversation.html` — the standalone HTML transcript export.
 
 If you change the serializers, re-run the extension against any
 conversation, export to each format, and diff against these files for a

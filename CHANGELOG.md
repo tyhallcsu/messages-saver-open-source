@@ -20,4 +20,6 @@ and this project follows [SemVer](https://semver.org/).
 - Original PNG icons at 16, 48, and 128 px, generated from
   `scripts/generate_icons.py` with standard-library Python only.
 - Sample synthetic exports in `sample-data/`.
+- Tag-driven GitHub Actions release packaging with a versioned ZIP and
+  SHA256 checksum output.
 - Documentation: README, PRIVACY, ARCHITECTURE, USAGE.

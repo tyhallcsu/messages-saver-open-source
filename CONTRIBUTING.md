@@ -42,6 +42,24 @@ There is no automated test suite yet. Manual smoke test:
 If you add behavior that can be exercised without the host site,
 please also add a deterministic sample in `sample-data/`.
 
+## Cutting a release
+
+1. Update `manifest.json` and `CHANGELOG.md`.
+2. Regenerate icons:
+
+   ```bash
+   python3 scripts/generate_icons.py
+   ```
+
+3. Build the release bundle locally:
+
+   ```bash
+   python3 scripts/build_release.py --out-dir dist
+   ```
+
+4. Push a tag named `vX.Y.Z`. The release workflow validates the repo,
+   creates a release ZIP plus SHA256 file, and publishes both to GitHub.
+
 ## Pull request checklist
 
 - [ ] No new runtime dependencies.

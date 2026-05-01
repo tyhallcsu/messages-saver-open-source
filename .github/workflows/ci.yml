@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate extension
@@ -18,10 +21,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate manifest + sample JSON
+      - name: Validate manifest + sample files
         run: |
           python3 -c "import json; json.load(open('manifest.json'))"
           python3 -c "import json; json.load(open('sample-data/sample-conversation.json'))"
+          python3 -c "from pathlib import Path; required=['sample-data/sample-conversation.csv','sample-data/sample-conversation.txt','sample-data/sample-conversation.html']; missing=[p for p in required if not Path(p).exists()]; raise SystemExit(f'Missing sample files: {missing}' if missing else 0)"
 
       - name: Regenerate icons and diff
         run: |
@@ -30,6 +34,10 @@ jobs:
             echo "::error::Icons on disk do not match scripts/generate_icons.py output. Run: python3 scripts/generate_icons.py";
             exit 1;
           }
+
+      - name: Build release bundle
+        run: |
+          python3 scripts/build_release.py --out-dir dist
 
       - name: Enforce no network APIs in extension code
         run: |
@@ -44,7 +52,7 @@ jobs:
         run: |
           set -eu
           if python3 -c "import json,sys; m=json.load(open('manifest.json')); hp=m.get('host_permissions',[]); bad=[h for h in hp if '<all_urls>' in h or h.startswith('*://')]; sys.exit(1 if bad else 0)"; then
-            echo "host_permissions are scoped — ok"
+            echo "host_permissions are scoped - ok"
           else
             echo "::error::host_permissions must not include <all_urls> or *://*"
             exit 1

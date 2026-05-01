@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "description": "Open-source Chrome extension that locally exports a conversation from your own Facebook/Messenger session to JSON, CSV, TXT, or HTML. DOM-based capture only — no private APIs, no external servers.",
   "author": "sharmanhall",
+  "homepage_url": "https://github.com/tyhallcsu/messages-saver-open-source",
   "minimum_chrome_version": "114",
 
   "action": {

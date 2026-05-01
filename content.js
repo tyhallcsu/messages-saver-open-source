@@ -30,6 +30,7 @@
     scroller: null,
     rootEl: null,
     pacer: null,
+    urlWatcher: null,
     scrollsDone: 0,
     maxScrolls: 2000,
     lastKnownUrl: location.href,
@@ -246,6 +247,7 @@
     state.scroller = container;
     state.rootEl = container;
     state.threadTitle = findThreadTitle();
+    state.lastKnownUrl = location.href;
 
     const settings = await chrome.storage.local.get([
       "captureReactions",
@@ -268,7 +270,7 @@
 
     state.capturing = true;
     startPacerIfEnabled(settings.pacing);
-    watchUrl();
+    startUrlWatcher();
     return { ok: true };
   }
 
@@ -279,6 +281,7 @@
       state.observer = null;
     }
     stopPacer();
+    stopUrlWatcher();
     return { ok: true };
   }
 
@@ -317,33 +320,43 @@
 
   /* ---------------- SPA navigation awareness ---------------- */
 
-  function watchUrl() {
-    setInterval(() => {
-      if (location.href !== state.lastKnownUrl) {
-        state.lastKnownUrl = location.href;
-        // Thread switched — capture continues but re-anchor to the new container.
-        const newContainer = findThreadContainer();
-        if (newContainer && newContainer !== state.scroller) {
-          if (state.observer) state.observer.disconnect();
-          state.scroller = newContainer;
-          state.rootEl = newContainer;
-          state.threadTitle = findThreadTitle();
-          if (state.capturing) {
-            state.observer = new MutationObserver(async (mutations) => {
-              const hasNew = mutations.some((m) => m.addedNodes && m.addedNodes.length > 0);
-              if (hasNew) {
-                const settings = await chrome.storage.local.get([
-                  "captureReactions",
-                  "captureAttachmentRefs",
-                ]);
-                await ingest(newContainer, settings);
-              }
-            });
-            state.observer.observe(newContainer, { childList: true, subtree: true });
-          }
+  function startUrlWatcher() {
+    if (state.urlWatcher) return;
+    state.urlWatcher = setInterval(async () => {
+      if (location.href === state.lastKnownUrl) return;
+
+      state.lastKnownUrl = location.href;
+      if (!state.capturing) return;
+
+      // Thread switched — capture continues but re-anchor to the new container.
+      const newContainer = findThreadContainer();
+      if (!newContainer || newContainer === state.scroller) return;
+
+      if (state.observer) state.observer.disconnect();
+      state.scroller = newContainer;
+      state.rootEl = newContainer;
+      state.threadTitle = findThreadTitle();
+
+      const settings = await chrome.storage.local.get([
+        "captureReactions",
+        "captureAttachmentRefs",
+      ]);
+      await ingest(newContainer, settings);
+
+      state.observer = new MutationObserver(async (mutations) => {
+        const hasNew = mutations.some((m) => m.addedNodes && m.addedNodes.length > 0);
+        if (hasNew) {
+          await ingest(newContainer, settings);
         }
-      }
+      });
+      state.observer.observe(newContainer, { childList: true, subtree: true });
     }, 1500);
+  }
+
+  function stopUrlWatcher() {
+    if (!state.urlWatcher) return;
+    clearInterval(state.urlWatcher);
+    state.urlWatcher = null;
   }
 
   /* ---------------- messaging with popup ---------------- */
