@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Open Chat Archiver",
   "short_name": "OpenChatArchiver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open-source Chrome extension that locally exports a conversation from your own Facebook/Messenger session to JSON, CSV, TXT, or HTML. DOM-based capture only — no private APIs, no external servers.",
   "author": "sharmanhall",
   "homepage_url": "https://github.com/tyhallcsu/messages-saver-open-source",
