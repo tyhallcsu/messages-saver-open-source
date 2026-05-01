@@ -61,3 +61,80 @@ Please include:
   thread ID.
 - Screenshot or a short screen recording if the UI is involved.
 - Relevant lines from the browser console.
+
+## Day-2 update workflow (PR-based)
+
+Direct pushes to `main` are discouraged even though the host plan does
+not currently support enforced branch protection on this private repo
+(GitHub Pro is required, or the repo would need to be public). The
+convention below is the day-2 flow regardless.
+
+```bash
+# Start from a clean main
+git checkout main
+git pull --ff-only origin main
+
+# Cut a feature branch
+git checkout -b fix/scroll-pacing-default
+
+# Make changes, commit using whatever granularity reads best
+git add .
+git commit -m "fix(content): clamp scroll pacing to 250ms minimum"
+
+# Push and open a PR
+git push -u origin fix/scroll-pacing-default
+gh pr create --base main --fill --web
+```
+
+**When the PR is ready to merge**, squash and delete the branch in one
+command:
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+### Pre-merge checklist
+
+Before clicking merge, confirm:
+
+- [ ] CI is green on the PR (the `ci` workflow validates manifest, runs
+      `node --check`, regenerates icons, and enforces the no-network rule).
+- [ ] CHANGELOG.md has an entry under `## [Unreleased]` if the change is
+      user-visible.
+- [ ] `manifest.json` `version` was bumped if this PR will be tagged for
+      release.
+- [ ] No new manifest permissions, network calls, or runtime dependencies.
+- [ ] Screenshots attached for any UI change.
+
+### Cutting a release
+
+After a PR is merged that bumps `manifest.json` `version`:
+
+```bash
+git checkout main
+git pull --ff-only origin main
+git tag v$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+git push origin --tags
+```
+
+The `release` workflow will:
+
+1. Verify the tag matches `manifest.json` `version`.
+2. Build a runtime zip (manifest, scripts, icons, LICENSE, README, PRIVACY).
+3. Compute its SHA-256 and file manifest.
+4. Pull the matching CHANGELOG section into the release body.
+5. Publish a GitHub Release with the zip attached and an extensive,
+   verbatim install + verify + usage guide auto-generated in the body.
+
+### Branch-protection status
+
+| Setting | State | Notes |
+|---|---|---|
+| Required status checks on `main` | Not enforced | Requires GitHub Pro on private user repos. Convention: do not push directly. |
+| Linear history | Not enforced | Squash-merge default keeps history linear in practice. |
+| Force-push to `main` | Allowed by API | Convention: never force-push to `main`. |
+| CODEOWNERS review | Active | `.github/CODEOWNERS` routes all PRs to `@tyhallcsu`. |
+
+To enable enforced branch protection, either upgrade to GitHub Pro or
+make the repo public. Until then, the PR-based workflow above is
+convention-only.
