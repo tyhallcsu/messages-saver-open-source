@@ -9,8 +9,13 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/_validate.yml
+
   release:
     name: Build and publish release
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

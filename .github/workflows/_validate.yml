@@ -1,0 +1,119 @@
+name: _validate
+
+# Reusable validation workflow. Called by:
+#   - .github/workflows/ci.yml      (on push / PR to main)
+#   - .github/workflows/release.yml (gating job before tag-triggered release)
+#
+# Keep every Chrome-extension correctness check in this file so both
+# entry points share one source of truth.
+
+on:
+  workflow_call:
+
+jobs:
+  validate:
+    name: Validate extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate manifest + sample JSON parse
+        run: |
+          python3 -c "import json; json.load(open('manifest.json'))"
+          python3 -c "import json; json.load(open('sample-data/sample-conversation.json'))"
+
+      - name: node --check on every extension JS file
+        run: |
+          set -eu
+          for f in background.js content.js popup.js options.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+
+      - name: Verify every manifest path exists on disk
+        run: |
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+            const paths = [];
+            if (m.action && m.action.default_popup) paths.push(m.action.default_popup);
+            for (const sz of Object.keys((m.action && m.action.default_icon) || {})) paths.push(m.action.default_icon[sz]);
+            for (const sz of Object.keys(m.icons || {})) paths.push(m.icons[sz]);
+            if (m.background && m.background.service_worker) paths.push(m.background.service_worker);
+            if (m.options_ui && m.options_ui.page) paths.push(m.options_ui.page);
+            for (const cs of m.content_scripts || []) {
+              for (const j of cs.js || []) paths.push(j);
+              for (const c of cs.css || []) paths.push(c);
+            }
+            for (const w of m.web_accessible_resources || []) for (const r of w.resources || []) paths.push(r);
+            let bad = 0;
+            for (const p of [...new Set(paths)]) {
+              if (!fs.existsSync(p)) { console.error("MISSING:", p); bad++; }
+            }
+            process.exit(bad ? 1 : 0);
+          '
+
+      - name: Verify sample-data JSON matches documented schema
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          data = json.load(open("sample-data/sample-conversation.json"))
+          assert data.get("schema") == "open-chat-archiver/1", data.get("schema")
+          assert "messages" in data and isinstance(data["messages"], list)
+          assert data.get("messageCount") == len(data["messages"]), (
+              f'messageCount {data.get("messageCount")} != actual {len(data["messages"])}'
+          )
+          required = {"sender","text","timestamp","direction","reactions","attachments"}
+          for i, m in enumerate(data["messages"]):
+              missing = required - set(m.keys())
+              assert not missing, f"message[{i}] missing keys: {missing}"
+              assert m["direction"] in ("incoming","outgoing"), m["direction"]
+              assert isinstance(m["reactions"], list)
+              assert isinstance(m["attachments"], list)
+          print(f"sample-data ok: {len(data['messages'])} messages, schema {data['schema']}")
+          PY
+
+      - name: Regenerate icons and diff
+        run: |
+          python3 scripts/generate_icons.py
+          git diff --exit-code icons/ || {
+            echo "::error::Icons on disk do not match scripts/generate_icons.py output. Run: python3 scripts/generate_icons.py";
+            exit 1;
+          }
+
+      - name: Enforce no network APIs in extension code
+        run: |
+          set -eu
+          pattern='fetch\(|XMLHttpRequest|WebSocket\(|navigator\.sendBeacon|new EventSource|importScripts'
+          if grep -E -n "$pattern" background.js content.js popup.js options.js; then
+            echo "::error::Disallowed network API usage detected in extension code. See CLAUDE.md."
+            exit 1
+          fi
+
+      - name: Enforce minimal host permissions
+        run: |
+          set -eu
+          if python3 -c "import json,sys; m=json.load(open('manifest.json')); hp=m.get('host_permissions',[]); bad=[h for h in hp if '<all_urls>' in h or h.startswith('*://')]; sys.exit(1 if bad else 0)"; then
+            echo "host_permissions are scoped — ok"
+          else
+            echo "::error::host_permissions must not include <all_urls> or *://*"
+            exit 1
+          fi
+
+      - name: CHANGELOG advisory (warn only)
+        run: |
+          set -eu
+          version=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::warning::CHANGELOG.md has no '## [$version]' section. Consider adding one before tagging a release."
+          fi
