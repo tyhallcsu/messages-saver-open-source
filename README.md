@@ -101,6 +101,12 @@ The extension splits work across three contexts:
 2. `popup.js` lets you start capture, filter by date, and request an export from the active tab.
 3. `background.js` serializes the filtered messages and hands the result to `chrome.downloads.download()` as a local `data:` URL.
 
+<p align="center">
+  <img src="./assets/overview.svg" alt="Diagram of the popup capture flow on the left and a sample export output on the right" width="920">
+  <br>
+  <sub><em>Popup capture flow (left) and an example export of the synthetic Weekend Camping Trip thread (right).</em></sub>
+</p>
+
 For the fuller data flow, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
 ## Privacy and guardrails

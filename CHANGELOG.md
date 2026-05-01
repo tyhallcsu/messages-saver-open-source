@@ -7,6 +7,26 @@ and this project follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-05-01
+
+### Added
+- README "How it works" section now includes
+  `assets/overview.svg` — the popup-flow / export-output illustrative
+  diagram. Sits alongside the live-capture screenshot in the Preview
+  section (both retained per maintainer request).
+
+### Changed
+- `popup.html` and `options.html`: footer link text changed from the
+  generic words "Source" / "Source code" to the actual repo URL
+  (`github.com/tyhallcsu/messages-saver-open-source`). The link
+  destination is unchanged. Makes the popup unambiguous about where
+  the link goes.
+- `popup.js → wireRepoLink` and `options.js → wireExternalLinks` now
+  also rewrite the link's `textContent` and `title` attribute from
+  `manifest.homepage_url` (with the URL scheme stripped for display).
+  This keeps the link text and href in sync if the manifest's
+  homepage_url is ever changed in a future release.
+
 ## [0.1.1] — 2026-05-01
 
 ### Added

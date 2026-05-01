@@ -21,7 +21,11 @@ function wireExternalLinks() {
   const repoUrl = manifest.homepage_url || "";
   if (repoUrl) {
     const repoLink = $("repoLink");
-    if (repoLink) repoLink.href = repoUrl;
+    if (repoLink) {
+      repoLink.href = repoUrl;
+      repoLink.textContent = repoUrl.replace(/^https?:\/\//, "");
+      repoLink.title = repoUrl;
+    }
 
     const privacyLink = $("privacyLink");
     if (privacyLink) {

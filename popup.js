@@ -25,6 +25,8 @@ function wireRepoLink() {
   const link = $("repoLink");
   if (!link) return;
   link.href = repoUrl;
+  link.textContent = repoUrl.replace(/^https?:\/\//, "");
+  link.title = repoUrl;
 }
 
 async function getActiveTab() {
