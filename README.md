@@ -210,17 +210,26 @@ pull request to `main` and verifies:
 
 ### Releases
 
-[`.github/workflows/release.yml`](.github/workflows/release.yml) fires when
-you push a tag matching `v*.*.*`. It verifies the tag matches
-`manifest.json`'s `version`, builds a zip of the runtime files, and creates
-a GitHub Release with auto-generated notes and the zip attached.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) has three
+trigger paths and runs the `_validate` gate on every one. A failed gate
+aborts the publish — you cannot ship an untested zip.
 
-To cut a release:
+| Trigger | When it fires | What happens |
+|---|---|---|
+| Version bump on `main` | A push to `main` changes `manifest.json` `version` | Auto: detects the bump, validates, creates the matching tag, publishes the release. |
+| Tag push | You push a tag matching `v*.*.*` | Validates the tag matches `manifest.json`, builds, publishes. |
+| Manual UI | Run via Actions tab → **release** → Run workflow | Validates, tags (if needed), publishes from the chosen branch. |
+
+The recommended flow is path 1: bump `manifest.json` `version` and add a
+matching `## [<version>]` section to `CHANGELOG.md` in the same PR. When
+the PR merges, the release publishes itself.
 
 ```bash
-# bump manifest.json version, update CHANGELOG.md, commit, then:
-git tag v0.1.1
-git push origin v0.1.1
+# In a PR branch:
+#   1. Bump manifest.json "version": "0.1.0" → "0.1.1"
+#   2. Add a "## [0.1.1]" section to CHANGELOG.md
+#   3. Open a PR, get CI green, squash-merge.
+# That's it — release.yml takes over.
 ```
 
 ## Limitations
