@@ -108,7 +108,17 @@ Before clicking merge, confirm:
 
 ### Cutting a release
 
-After a PR is merged that bumps `manifest.json` `version`:
+There are three ways to fire the release pipeline. All three run the
+same `_validate` gate first; a failed gate aborts the publish.
+
+**1. Auto-release on version bump (recommended).**
+Bump `manifest.json` `version` in a PR, add a matching `## [<version>]`
+section to `CHANGELOG.md`, get the PR merged. The push to `main`
+triggers `release.yml` automatically; the workflow detects the version
+change, runs the validation gate, creates the matching tag, and
+publishes the release. No `git tag` step required on your end.
+
+**2. Manual tag push.**
 
 ```bash
 git checkout main
@@ -117,14 +127,29 @@ git tag v$(python3 -c "import json; print(json.load(open('manifest.json'))['vers
 git push origin --tags
 ```
 
-The `release` workflow will:
+The release workflow verifies the tag matches `manifest.json` and
+publishes. Useful when you want to release from a specific older
+commit.
 
-1. Verify the tag matches `manifest.json` `version`.
-2. Build a runtime zip (manifest, scripts, icons, LICENSE, README, PRIVACY).
-3. Compute its SHA-256 and file manifest.
-4. Pull the matching CHANGELOG section into the release body.
-5. Publish a GitHub Release with the zip attached and an extensive,
-   verbatim install + verify + usage guide auto-generated in the body.
+**3. Manual UI trigger.**
+GitHub UI → **Actions** tab → **release** workflow → **Run workflow**
+button. Uses whatever version is in `manifest.json` on the chosen
+branch. Useful for re-running a failed publish without bumping the
+version again.
+
+In all three cases the release workflow:
+
+1. Decides whether to release (version actually changed, tag doesn't
+   already exist for the auto path).
+2. Runs `_validate.yml` — manifest parse, sample-data schema, node
+   `--check`, manifest-path existence, icon regen, network-API check,
+   host-permission check.
+3. Builds the runtime zip (manifest, scripts, icons, LICENSE, README,
+   PRIVACY).
+4. Computes SHA-256, file manifest, and pulls the matching `CHANGELOG.md`
+   section.
+5. Publishes a GitHub Release with the zip attached and an extensive
+   install + verify + usage body auto-generated.
 
 ### Branch-protection status
 

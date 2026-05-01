@@ -118,10 +118,48 @@ Regenerate icons after changing the icon script:
 python3 scripts/generate_icons.py
 ```
 
-Build the release bundle locally:
+The generator uses only the Python standard library — no extra packages.
+
+If you change `content.js → extractMessageFromRow()` or any serializer in
+`background.js`, sanity-check the output against
+[`sample-data/sample-conversation.json`](sample-data/sample-conversation.json)
+to confirm the schema still parses.
+
+### Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
+pull request to `main` and verifies:
+
+- `manifest.json` and `sample-data/sample-conversation.json` parse as JSON.
+- `node --check` passes for every extension JS file.
+- Every path declared in `manifest.json` (icons, scripts, popup, options,
+  content scripts, web-accessible resources) exists on disk.
+- Icons on disk match the deterministic output of `scripts/generate_icons.py`.
+- No disallowed network APIs are called from extension code.
+- `host_permissions` does not include `<all_urls>` or wildcard schemes.
+
+### Releases
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) has three
+trigger paths and runs the `_validate` gate on every one. A failed gate
+aborts the publish — you cannot ship an untested zip.
+
+| Trigger | When it fires | What happens |
+|---|---|---|
+| Version bump on `main` | A push to `main` changes `manifest.json` `version` | Auto: detects the bump, validates, creates the matching tag, publishes the release. |
+| Tag push | You push a tag matching `v*.*.*` | Validates the tag matches `manifest.json`, builds, publishes. |
+| Manual UI | Run via Actions tab → **release** → Run workflow | Validates, tags (if needed), publishes from the chosen branch. |
+
+The recommended flow is path 1: bump `manifest.json` `version` and add a
+matching `## [<version>]` section to `CHANGELOG.md` in the same PR. When
+the PR merges, the release publishes itself.
 
 ```bash
-python3 scripts/build_release.py --out-dir dist
+# In a PR branch:
+#   1. Bump manifest.json "version": "0.1.0" → "0.1.1"
+#   2. Add a "## [0.1.1]" section to CHANGELOG.md
+#   3. Open a PR, get CI green, squash-merge.
+# That's it — release.yml takes over.
 ```
 
 The CI workflow validates the manifest, sample exports, icon generation, release bundle creation, forbidden network APIs, and host permission scope. See [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).

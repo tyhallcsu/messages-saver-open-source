@@ -1,40 +1,142 @@
 name: release
 
+# Three ways to fire a release:
+#   1. Push a commit to main that changes manifest.json's version  → auto-detect, tag, build, publish.
+#   2. Push a tag matching v*.*.*                                  → tag must match manifest.json; build, publish.
+#   3. Run "release" from the Actions tab (workflow_dispatch)      → uses current manifest.json version.
+#
+# All three paths run the reusable _validate.yml gate first. A failed gate aborts the publish.
+
 on:
   push:
+    branches: [main]
+    paths:
+      - "manifest.json"
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  detect:
+    name: Detect release trigger
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.check.outputs.version }}
+      trigger: ${{ steps.check.outputs.trigger }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          # fetch-depth: 2 lets us diff manifest.json against the previous main commit.
+
+      - name: Decide whether to release
+        id: check
+        run: |
+          set -eu
+          version=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          tag="v$version"
+
+          should_release=false
+          trigger=""
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            pushed_tag="${GITHUB_REF#refs/tags/}"
+            pushed_version="${pushed_tag#v}"
+            if [ "$pushed_version" != "$version" ]; then
+              echo "::error::Pushed tag ${pushed_tag} does not match manifest.json version v${version}."
+              exit 1
+            fi
+            trigger=tag
+            should_release=true
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            trigger=dispatch
+            should_release=true
+          elif [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            # Auto-release path: did manifest.json's version actually change on this push?
+            old=$(git show HEAD~1:manifest.json 2>/dev/null \
+              | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])" 2>/dev/null \
+              || echo "")
+            if [ -n "$old" ] && [ "$version" != "$old" ]; then
+              # Don't double-publish if a release already exists for this version.
+              if git ls-remote --tags origin "$tag" | grep -q "refs/tags/$tag"; then
+                echo "::warning::Tag $tag already exists on origin; skipping auto-release."
+              else
+                trigger=version_bump
+                should_release=true
+              fi
+            fi
+          fi
+
+          echo "version=$version"           >> "$GITHUB_OUTPUT"
+          echo "tag=$tag"                   >> "$GITHUB_OUTPUT"
+          echo "trigger=$trigger"           >> "$GITHUB_OUTPUT"
+          echo "should_release=$should_release" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Release detection"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| version | \`$version\` |"
+            echo "| tag | \`$tag\` |"
+            echo "| trigger | \`$trigger\` |"
+            echo "| should_release | \`$should_release\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   test:
     name: Test
+    needs: detect
+    if: needs.detect.outputs.should_release == 'true'
     uses: ./.github/workflows/_validate.yml
 
   release:
     name: Build and publish release
-    needs: test
+    needs: [detect, test]
+    if: needs.detect.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Verify tag matches manifest version
-        id: meta
+      - name: Configure git for tag creation
+        if: needs.detect.outputs.trigger != 'tag'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag (auto / dispatch paths only)
+        if: needs.detect.outputs.trigger != 'tag'
+        env:
+          TAG: ${{ needs.detect.outputs.tag }}
         run: |
           set -eu
-          tag="${GITHUB_REF#refs/tags/}"
-          manifest_version=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
-          if [ "$tag" != "v$manifest_version" ]; then
-            echo "::error::Tag ($tag) does not match manifest.json version (v$manifest_version)."
-            exit 1
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists locally."
+          else
+            git tag "$TAG" "${{ github.sha }}"
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$manifest_version" >> "$GITHUB_OUTPUT"
-          echo "asset=open-chat-archiver-${manifest_version}.zip" >> "$GITHUB_OUTPUT"
+          if git ls-remote --tags origin "$TAG" | grep -q "refs/tags/$TAG"; then
+            echo "Tag $TAG already exists on origin; not re-pushing."
+          else
+            git push origin "$TAG"
+          fi
+
+      - name: Compute release metadata
+        id: meta
+        env:
+          TAG: ${{ needs.detect.outputs.tag }}
+          VERSION: ${{ needs.detect.outputs.version }}
+        run: |
+          set -eu
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "asset=open-chat-archiver-${VERSION}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Build extension zip
         id: build
@@ -104,6 +206,7 @@ jobs:
           CHANGELOG_SECTION: ${{ steps.changelog.outputs.section }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          TRIGGER: ${{ needs.detect.outputs.trigger }}
         run: |
           set -eu
           size_kb=$(awk -v b="$SIZE_BYTES" 'BEGIN{printf "%.1f", b/1024}')
@@ -169,6 +272,7 @@ jobs:
             echo "| SHA-256 | \`${SHA256}\` |"
             echo "| Source commit | \`${SHA}\` |"
             echo "| Manifest version | \`${VERSION}\` |"
+            echo "| Trigger | \`${TRIGGER}\` |"
             echo ""
             echo "### File manifest"
             echo ""
@@ -203,8 +307,15 @@ jobs:
         run: |
           set -eu
           printf '%s' "$BODY" > /tmp/release-body.md
-          gh release create "$TAG" \
-            "$ASSET" \
-            --title "$TAG" \
-            --notes-file /tmp/release-body.md \
-            --generate-notes
+          # Idempotent: if the release already exists (e.g. concurrent fire), upload the asset and update notes.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::warning::Release $TAG already exists; uploading asset and refreshing notes."
+            gh release upload "$TAG" "$ASSET" --clobber
+            gh release edit "$TAG" --notes-file /tmp/release-body.md
+          else
+            gh release create "$TAG" \
+              "$ASSET" \
+              --title "$TAG" \
+              --notes-file /tmp/release-body.md \
+              --generate-notes
+          fi
