@@ -56,12 +56,6 @@ Open Chat Archiver runs entirely inside your browser session. It reads only the 
 - Capture visible reactions and attachment URLs without downloading attachment bytes.
 - Keep the extension fully local: no analytics, no feature flags, no remote endpoints, no runtime dependencies.
 
-## Preview
-
-<p align="center">
-  <img src="./assets/overview.svg" alt="Popup and export preview illustration" width="920">
-</p>
-
 ## Install
 
 There is no build step. Load the extension source directly in Chrome.
