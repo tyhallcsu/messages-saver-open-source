@@ -6,8 +6,7 @@
 
 **A dependency-free Chrome extension that exports your own Facebook / Messenger conversations to JSON, CSV, TXT, or HTML — locally, with no network egress.**
 
-[![License: MIT](https://img.shields.io/github/license/tyhallcsu/messages-saver-open-source.svg?color=blue)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/tyhallcsu/messages-saver-open-source/ci.yml?branch=main&label=ci)](https://github.com/tyhallcsu/messages-saver-open-source/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#development)
 [![No tracking](https://img.shields.io/badge/tracking-none-brightgreen.svg)](PRIVACY.md)
