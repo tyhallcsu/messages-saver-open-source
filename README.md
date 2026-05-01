@@ -74,7 +74,7 @@ The repository also includes a tag-driven release workflow in [`.github/workflow
 
 ## Usage
 
-1. Open a conversation on `https://www.messenger.com/t/<thread>` or `https://www.facebook.com/messages/t/<thread>`.
+1. Open a conversation on `https://www.messenger.com/t/<thread>` or the full Facebook Messages page at `https://www.facebook.com/messages/t/<thread>`.
 2. Click the extension icon and choose **Start capture**.
 3. Scroll upward to load older messages, or enable paced auto-scroll in **Options**.
 4. Optionally set **From** and **To** dates in the popup.

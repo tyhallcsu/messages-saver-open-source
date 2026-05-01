@@ -125,6 +125,10 @@ The extension is **inert on every other page**. Its content script only
 runs on the URL patterns above (defined in `manifest.json` →
 `content_scripts.matches`).
 
+> **Important:** the Messenger drawer/popover inside the regular
+> `facebook.com` homepage is **not** a supported capture surface. Open
+> the full `/messages/...` page instead.
+
 > **Heads up:** if you opened the conversation tab *before* installing
 > the extension, reload it once. The content script injects at
 > `document_idle`; tabs opened pre-install never received it.
@@ -369,6 +373,9 @@ When a new release is published:
 
 You're not on a supported URL. Navigate to `messenger.com/t/<thread>`
 (or one of the other supported patterns) and reopen the popup.
+
+If you're on `facebook.com`, make sure you're on the full
+`/messages/...` page, not the Messenger drawer opened from the top bar.
 
 ### "Ready — content script not yet active. Try reloading the tab."
 
