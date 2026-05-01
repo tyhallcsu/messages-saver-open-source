@@ -4,12 +4,6 @@
  * service worker for downloads. Never makes network requests of its own.
  */
 
-const SUPPORTED_HOSTS = [
-  "www.facebook.com",
-  "m.facebook.com",
-  "www.messenger.com",
-];
-
 const $ = (id) => document.getElementById(id);
 
 let state = {
@@ -34,13 +28,50 @@ async function getActiveTab() {
   return tab || null;
 }
 
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function matchPatternToRegex(pattern) {
+  const match = pattern.match(/^(\*|http|https|file|ftp):\/\/([^/]+)(\/.*)$/);
+  if (!match) return null;
+
+  const [, scheme, host, path] = match;
+  const schemePart = scheme === "*" ? "https?" : escapeRegex(scheme);
+  const hostPart = escapeRegex(host).replace(/\\\*/g, ".*");
+  const pathPart = escapeRegex(path).replace(/\\\*/g, ".*");
+  return new RegExp(`^${schemePart}:\\/\\/${hostPart}${pathPart}$`);
+}
+
+function canonicalUrlForMatch(url) {
+  const parsed = new URL(url);
+  return `${parsed.origin}${parsed.pathname}`;
+}
+
 function isSupportedUrl(url) {
   try {
-    const u = new URL(url);
-    return SUPPORTED_HOSTS.includes(u.hostname);
+    const manifest = chrome.runtime.getManifest();
+    const matches = (manifest.content_scripts || []).flatMap((entry) => entry.matches || []);
+    const candidate = canonicalUrlForMatch(url);
+    return matches.some((pattern) => {
+      const rx = matchPatternToRegex(pattern);
+      return rx ? rx.test(candidate) : false;
+    });
   } catch {
     return false;
   }
+}
+
+function unsupportedPageMessage(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "www.facebook.com" || u.hostname === "m.facebook.com") {
+      return "Open a full Facebook Messages page or use messenger.com";
+    }
+  } catch {
+    // fall through
+  }
+  return "Open a Messenger or Facebook conversation";
 }
 
 function setStatus(text, cls) {
@@ -71,7 +102,7 @@ async function sendToContent(tabId, message) {
 async function refreshStatus() {
   const tab = await getActiveTab();
   if (!tab || !isSupportedUrl(tab.url)) {
-    setStatus("Open a Messenger or Facebook conversation", null);
+    setStatus(unsupportedPageMessage(tab?.url), null);
     $("toggleCapture").disabled = true;
     $("exportBtn").disabled = true;
     return;
