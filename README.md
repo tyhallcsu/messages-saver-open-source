@@ -25,6 +25,16 @@ Open Chat Archiver runs entirely inside your browser session. It reads only the 
 
 > This project is an independent clean-room implementation. It is not affiliated with, endorsed by, or derived from Meta Platforms, Inc. "Facebook" and "Messenger" are used only to describe the sites the extension can read from.
 
+## Preview
+
+<div align="center">
+
+<img src="assets/messages-saver-screenshot.png" alt="Open Chat Archiver popup capturing 312 messages from a Messenger conversation" width="100%" />
+
+<sub><em>The popup shown mid-capture on messenger.com — 312 messages captured, JSON / CSV / TXT / HTML export ready.</em></sub>
+
+</div>
+
 ## At a glance
 
 | Surface | Value |

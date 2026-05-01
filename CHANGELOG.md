@@ -29,6 +29,13 @@ and this project follows [SemVer](https://semver.org/).
   `CLAUDE.md`, or an existing source file.
 - CI's disallowed-network-API grep now also rejects `EventSource` and
   `importScripts`.
+- README now includes a centered Preview screenshot
+  (`assets/messages-saver-screenshot.png`) showing the popup mid-capture
+  against a real Messenger thread. The same image replaces the
+  popup-mid-capture placeholder in `docs/USAGE.md`.
+- Release pipeline rewritten to auto-publish on `manifest.json` version
+  bumps to `main`, with the same gate also reachable via tag push or
+  Actions-tab `workflow_dispatch`.
 
 ## [0.1.0] — initial public release
 

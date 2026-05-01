@@ -137,7 +137,9 @@ runs on the URL patterns above (defined in `manifest.json` →
 
 Click the Open Chat Archiver icon in the Chrome toolbar.
 
-> **Screenshot placeholder — popup in idle state, status dot grey.**
+![Open Chat Archiver popup, mid-capture on messenger.com — 312 messages captured](../assets/messages-saver-screenshot.png)
+
+*The popup shown mid-capture: status dot green, **Capturing: Conversation with …**, captured / in-range counters live.*
 
 The popup shows:
 
