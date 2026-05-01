@@ -16,6 +16,21 @@ const DEFAULTS = Object.freeze({
 
 const $ = (id) => document.getElementById(id);
 
+function wireExternalLinks() {
+  const manifest = chrome.runtime.getManifest();
+  const repoUrl = manifest.homepage_url || "";
+  if (repoUrl) {
+    const repoLink = $("repoLink");
+    if (repoLink) repoLink.href = repoUrl;
+
+    const privacyLink = $("privacyLink");
+    if (privacyLink) {
+      privacyLink.href = new URL("blob/main/PRIVACY.md", `${repoUrl}/`).toString();
+    }
+  }
+  $("versionLabel").textContent = manifest.version;
+}
+
 async function load() {
   const stored = await chrome.storage.local.get(Object.keys(DEFAULTS));
   const merged = { ...DEFAULTS, ...stored };
@@ -27,9 +42,6 @@ async function load() {
   $("captureReactions").checked = !!merged.captureReactions;
   $("captureAttachmentRefs").checked = !!merged.captureAttachmentRefs;
   $("collapseConsecutive").checked = !!merged.collapseConsecutive;
-
-  const manifest = chrome.runtime.getManifest();
-  $("versionLabel").textContent = manifest.version;
 }
 
 function collect() {
@@ -61,6 +73,7 @@ async function reset() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  wireExternalLinks();
   await load();
   $("save").addEventListener("click", save);
   $("reset").addEventListener("click", reset);

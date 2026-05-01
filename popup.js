@@ -19,6 +19,14 @@ let state = {
   threadTitle: null,
 };
 
+function wireRepoLink() {
+  const repoUrl = chrome.runtime.getManifest().homepage_url || "";
+  if (!repoUrl) return;
+  const link = $("repoLink");
+  if (!link) return;
+  link.href = repoUrl;
+}
+
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab || null;
@@ -178,6 +186,7 @@ async function onExport() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  wireRepoLink();
   await loadPrefs();
   await refreshStatus();
 

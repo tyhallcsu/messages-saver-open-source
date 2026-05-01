@@ -4,8 +4,8 @@ Generate the extension's icons.
 
 We use only the Python standard library (struct + zlib) so contributors do
 not need Pillow or any other image library to rebuild icons. The design is
-an original chat-bubble silhouette with a downward export arrow inside,
-rendered on a transparent background.
+an original blue app tile containing a white chat bubble and a downward
+export arrow, rendered on a transparent background.
 
 Run from the project root:
     python3 scripts/generate_icons.py
@@ -21,9 +21,12 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), os.pardir, "icons")
 SIZES = (16, 48, 128)
 
 BG        = (0, 0, 0, 0)          # transparent
-BUBBLE    = (47, 111, 235, 255)   # Open Chat Archiver blue
-BUBBLE_HI = (104, 148, 243, 255)  # lighter accent
-ARROW     = (255, 255, 255, 255)  # white arrow
+TILE      = (31, 92, 225, 255)    # primary tile blue
+TILE_HI   = (111, 164, 255, 255)  # top highlight
+TILE_LO   = (24, 73, 176, 255)    # lower shade
+SHADOW    = (15, 52, 132, 255)    # bubble shadow
+BUBBLE    = (255, 255, 255, 255)  # white chat bubble
+ARROW     = (35, 96, 224, 255)    # blue arrow inside the bubble
 
 
 def write_png(path: str, pixels, w: int, h: int) -> None:
@@ -104,39 +107,78 @@ def draw_triangle_down(pixels, cx, top_y, half_base, height, color):
 def render(size: int):
     px = blank(size, size)
 
-    # Bubble body: rounded square, slightly taller than the tail.
-    pad = max(1, size // 10)
-    radius = max(2, size // 5)
-    body_x0 = pad
-    body_y0 = pad
-    body_x1 = size - pad
-    body_y1 = size - pad - max(1, size // 7)   # leave room for the tail
-    draw_rounded_rect(px, body_x0, body_y0, body_x1, body_y1, radius, BUBBLE)
+    # App tile.
+    pad = max(1, size // 14)
+    tile_radius = max(3, size // 5)
+    tile_x0 = pad
+    tile_y0 = pad
+    tile_x1 = size - pad
+    tile_y1 = size - pad
+    draw_rounded_rect(px, tile_x0, tile_y0, tile_x1, tile_y1, tile_radius, TILE)
 
-    # Tail: small triangle on the bottom-left corner.
-    tail_cx = body_x0 + max(2, size // 5)
-    tail_top = body_y1 - 1
-    tail_h = max(2, size // 7)
-    tail_half = max(2, size // 9)
-    draw_triangle_down(px, tail_cx, tail_top, tail_half, tail_h, BUBBLE)
-
-    # Subtle top-edge highlight for a small amount of depth.
+    # Tile highlight and base shade.
     fill_rect(px,
-              body_x0 + radius // 2,
-              body_y0 + max(1, size // 32),
-              body_x1 - radius // 2,
-              body_y0 + max(2, size // 20),
-              BUBBLE_HI)
+              tile_x0 + tile_radius // 2,
+              tile_y0 + max(1, size // 24),
+              tile_x1 - tile_radius // 2,
+              tile_y0 + max(2, size // 10),
+              TILE_HI)
+    fill_rect(px,
+              tile_x0 + max(1, size // 10),
+              tile_y1 - max(2, size // 8),
+              tile_x1 - max(1, size // 10),
+              tile_y1 - max(1, size // 18),
+              TILE_LO)
 
-    # Download arrow inside the bubble (stem + head).
-    cx = (body_x0 + body_x1) // 2
-    stem_halfw = max(1, size // 20)
-    stem_top = body_y0 + max(2, size // 5)
-    stem_bot = body_y1 - max(3, size // 4)
+    # Chat bubble shadow.
+    bubble_x0 = tile_x0 + max(2, size // 5)
+    bubble_y0 = tile_y0 + max(2, size // 5)
+    bubble_x1 = tile_x1 - max(2, size // 6)
+    bubble_y1 = tile_y0 + max(6, size // 2)
+    bubble_radius = max(2, size // 8)
+    shadow_dx = max(1, size // 48)
+    shadow_dy = max(1, size // 48)
+    draw_rounded_rect(
+        px,
+        bubble_x0 + shadow_dx,
+        bubble_y0 + shadow_dy,
+        bubble_x1 + shadow_dx,
+        bubble_y1 + shadow_dy,
+        bubble_radius,
+        SHADOW,
+    )
+    tail_cx = bubble_x0 + max(2, size // 10)
+    tail_half = max(1, size // 14)
+    tail_height = max(2, size // 10)
+    draw_triangle_down(
+        px,
+        tail_cx + shadow_dx,
+        bubble_y1 - 1 + shadow_dy,
+        tail_half,
+        tail_height,
+        SHADOW,
+    )
+
+    # Foreground chat bubble.
+    draw_rounded_rect(px, bubble_x0, bubble_y0, bubble_x1, bubble_y1, bubble_radius, BUBBLE)
+    draw_triangle_down(
+        px,
+        tail_cx,
+        bubble_y1 - 1,
+        tail_half,
+        tail_height,
+        BUBBLE,
+    )
+
+    # Download arrow inside the bubble.
+    cx = (bubble_x0 + bubble_x1) // 2
+    stem_halfw = max(1, size // 24)
+    stem_top = bubble_y0 + max(2, size // 8)
+    stem_bot = bubble_y1 - max(3, size // 7)
     fill_rect(px, cx - stem_halfw, stem_top, cx + stem_halfw + 1, stem_bot, ARROW)
-    head_half = max(2, size // 6)
-    head_height = max(2, size // 6)
-    draw_triangle_down(px, cx, stem_bot, head_half, head_height, ARROW)
+    head_half = max(2, size // 8)
+    head_height = max(2, size // 8)
+    draw_triangle_down(px, cx, stem_bot - 1, head_half, head_height, ARROW)
 
     return px
 
