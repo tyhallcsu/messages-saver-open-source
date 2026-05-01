@@ -1,0 +1,21 @@
+# Code owners for Open Chat Archiver.
+# Format: <path>  <owner-handle>
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo.
+*                       @tyhallcsu
+
+# Extension code paths — keep ownership tight to the maintainer.
+/manifest.json          @tyhallcsu
+/background.js          @tyhallcsu
+/content.js             @tyhallcsu
+/popup.*                @tyhallcsu
+/options.*              @tyhallcsu
+
+# CI, release, and policy files require maintainer review.
+/.github/               @tyhallcsu
+/CONTRIBUTING.md        @tyhallcsu
+/SECURITY.md            @tyhallcsu
+/PRIVACY.md             @tyhallcsu
+/CODE_OF_CONDUCT.md     @tyhallcsu
+/LICENSE                @tyhallcsu

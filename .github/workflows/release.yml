@@ -18,6 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Verify tag matches manifest version
+        id: meta
         run: |
           set -eu
           tag="${GITHUB_REF#refs/tags/}"
@@ -26,15 +27,17 @@ jobs:
             echo "::error::Tag ($tag) does not match manifest.json version (v$manifest_version)."
             exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_ENV"
-          echo "version=$manifest_version" >> "$GITHUB_ENV"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$manifest_version" >> "$GITHUB_OUTPUT"
+          echo "asset=open-chat-archiver-${manifest_version}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Build extension zip
+        id: build
+        env:
+          ASSET: ${{ steps.meta.outputs.asset }}
         run: |
           set -eu
-          out="open-chat-archiver-${{ env.version }}.zip"
-          # Ship only the files Chrome needs at runtime + LICENSE/README/PRIVACY.
-          zip -r "$out" \
+          zip -r "$ASSET" \
             manifest.json \
             background.js \
             content.js \
@@ -45,15 +48,158 @@ jobs:
             LICENSE \
             README.md \
             PRIVACY.md
-          ls -la "$out"
-          echo "asset=$out" >> "$GITHUB_ENV"
+          ls -la "$ASSET"
+          sha256=$(shasum -a 256 "$ASSET" | awk '{print $1}')
+          size=$(wc -c < "$ASSET" | tr -d ' ')
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+
+      - name: Build file manifest
+        id: manifest
+        env:
+          ASSET: ${{ steps.meta.outputs.asset }}
+        run: |
+          set -eu
+          {
+            echo 'file_manifest<<EOF'
+            unzip -l "$ASSET" | awk 'NR>3 && NF>=4 && $1!="" && $4!="" {printf "%-12s  %s\n", $1, $4}' | sed '/^$/d' | head -n -2
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Extract CHANGELOG section for this version
+        id: changelog
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -eu
+          # Pull the section between "## [<version>]" and the next "## [" header.
+          section=$(awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { found=1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md || true)
+          if [ -z "$section" ]; then
+            section="No CHANGELOG entry found for version ${VERSION}. See CHANGELOG.md."
+          fi
+          {
+            echo 'section<<EOF'
+            echo "$section"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compose release body
+        id: body
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          ASSET: ${{ steps.meta.outputs.asset }}
+          SHA256: ${{ steps.build.outputs.sha256 }}
+          SIZE_BYTES: ${{ steps.build.outputs.size }}
+          FILE_MANIFEST: ${{ steps.manifest.outputs.file_manifest }}
+          CHANGELOG_SECTION: ${{ steps.changelog.outputs.section }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          size_kb=$(awk -v b="$SIZE_BYTES" 'BEGIN{printf "%.1f", b/1024}')
+          {
+            echo 'body<<RELEASE_EOF'
+            echo "# Open Chat Archiver ${TAG}"
+            echo ""
+            echo "Manifest V3 Chrome extension that exports your own Facebook / Messenger conversations to JSON / CSV / TXT / HTML — locally, with zero network egress."
+            echo ""
+            echo "## Changes in this release"
+            echo ""
+            echo "${CHANGELOG_SECTION}"
+            echo ""
+            echo "## Install (developer mode)"
+            echo ""
+            echo "1. Download \`${ASSET}\` from the **Assets** section below."
+            echo "2. Verify the SHA-256 (optional but recommended):"
+            echo "   \`\`\`bash"
+            echo "   shasum -a 256 ${ASSET}"
+            echo "   # expected: ${SHA256}"
+            echo "   \`\`\`"
+            echo "3. Unzip into a folder you'll keep around (Chrome reads from disk)."
+            echo "4. Open \`chrome://extensions\`."
+            echo "5. Enable **Developer mode** (top-right toggle)."
+            echo "6. Click **Load unpacked** and select the unzipped folder."
+            echo "7. Pin the icon to your toolbar."
+            echo ""
+            echo "Updating from a previous version: remove the old extension at \`chrome://extensions\`, unzip the new release into a fresh folder, and **Load unpacked** again. Your saved options live in \`chrome.storage.local\` and are scoped to each loaded copy."
+            echo ""
+            echo "## Verify the extension before loading"
+            echo ""
+            echo "Before clicking **Load unpacked**, you can confirm there is no network egress:"
+            echo ""
+            echo "\`\`\`bash"
+            echo "grep -REn 'fetch\\(|XMLHttpRequest|WebSocket\\(|navigator\\.sendBeacon|new EventSource|importScripts' \\\\"
+            echo "  background.js content.js popup.js options.js"
+            echo "# expected: no matches"
+            echo "\`\`\`"
+            echo ""
+            echo "And confirm the manifest's host scope is narrow:"
+            echo ""
+            echo "\`\`\`bash"
+            echo "python3 -c \"import json; print(json.load(open('manifest.json'))['host_permissions'])\""
+            echo "# expected: only facebook.com / m.facebook.com / messenger.com — no <all_urls>, no *://*"
+            echo "\`\`\`"
+            echo ""
+            echo "## How to use"
+            echo ""
+            echo "1. Open a conversation on \`messenger.com/t/<thread>\` or \`facebook.com/messages/t/<thread>\`."
+            echo "2. Click the extension icon → **Start capture**."
+            echo "3. Scroll up to load older messages (or enable paced auto-scroll in Options)."
+            echo "4. Optionally set a **From** / **To** date range."
+            echo "5. Pick a format and click **Download export**."
+            echo ""
+            echo "Full step-by-step walkthrough with troubleshooting: [docs/USAGE.md](https://github.com/${REPO}/blob/${TAG}/docs/USAGE.md)"
+            echo ""
+            echo "## Release artifact"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| File | \`${ASSET}\` |"
+            echo "| Size | ${size_kb} KiB (${SIZE_BYTES} bytes) |"
+            echo "| SHA-256 | \`${SHA256}\` |"
+            echo "| Source commit | \`${SHA}\` |"
+            echo "| Manifest version | \`${VERSION}\` |"
+            echo ""
+            echo "### File manifest"
+            echo ""
+            echo "\`\`\`"
+            echo "${FILE_MANIFEST}"
+            echo "\`\`\`"
+            echo ""
+            echo "## Privacy and safety"
+            echo ""
+            echo "- No network egress — enforced in CI on every commit."
+            echo "- No private API scraping; only the rendered DOM is read."
+            echo "- Minimal permissions: \`storage\`, \`downloads\`, \`activeTab\`, narrow host scope."
+            echo "- Full statement: [PRIVACY.md](https://github.com/${REPO}/blob/${TAG}/PRIVACY.md)"
+            echo ""
+            echo "## Reporting issues"
+            echo ""
+            echo "- Bug or capture regression: [open an issue](https://github.com/${REPO}/issues/new?template=bug_report.md)."
+            echo "- Security concern: see [SECURITY.md](https://github.com/${REPO}/blob/${TAG}/SECURITY.md) — please use a private advisory, not a public issue."
+            echo ""
+            echo "---"
+            echo ""
+            echo "_Auto-generated commit history is appended below by GitHub._"
+            echo "RELEASE_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          ASSET: ${{ steps.meta.outputs.asset }}
+          BODY: ${{ steps.body.outputs.body }}
         run: |
           set -eu
-          gh release create "${{ env.tag }}" \
-            "${{ env.asset }}" \
-            --title "${{ env.tag }}" \
+          printf '%s' "$BODY" > /tmp/release-body.md
+          gh release create "$TAG" \
+            "$ASSET" \
+            --title "$TAG" \
+            --notes-file /tmp/release-body.md \
             --generate-notes
