@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="Open Chat Archiver">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fbff"/>
+      <stop offset="100%" stop-color="#eef4ff"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2f6feb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" rx="36" fill="url(#bg)"/>
+  <circle cx="1035" cy="95" r="110" fill="#dbeafe"/>
+  <circle cx="1125" cy="290" r="86" fill="#c7d2fe"/>
+  <circle cx="900" cy="342" r="58" fill="#bfdbfe"/>
+
+  <rect x="72" y="66" width="170" height="34" rx="17" fill="#dbeafe"/>
+  <text x="157" y="88" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">Manifest V3 / Local-only</text>
+
+  <text x="72" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="68" font-weight="750" letter-spacing="-2" fill="#0f172a">Open Chat Archiver</text>
+  <text x="72" y="216" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" fill="#334155">Export your own Messenger conversations to JSON, CSV, TXT, or HTML</text>
+  <text x="72" y="248" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" fill="#334155">without private APIs, runtime dependencies, or network egress.</text>
+
+  <rect x="72" y="290" width="164" height="44" rx="22" fill="#1d4ed8"/>
+  <text x="154" y="318" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#ffffff">DOM-only capture</text>
+
+  <rect x="252" y="290" width="146" height="44" rx="22" fill="#dbeafe"/>
+  <text x="325" y="318" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#1d4ed8">No tracking</text>
+
+  <rect x="826" y="92" width="274" height="236" rx="28" fill="url(#card)"/>
+  <rect x="842" y="108" width="242" height="18" rx="9" fill="#75a7ff"/>
+  <rect x="878" y="152" width="146" height="98" rx="30" fill="#ffffff"/>
+  <path d="M904 250 L934 250 L918 274 Z" fill="#ffffff"/>
+  <rect x="942" y="174" width="18" height="38" rx="9" fill="#2563eb"/>
+  <path d="M930 208 L951 231 L972 208 Z" fill="#2563eb"/>
+  <rect x="862" y="348" width="88" height="34" rx="17" fill="#eff6ff"/>
+  <rect x="960" y="348" width="72" height="34" rx="17" fill="#bfdbfe"/>
+  <rect x="1042" y="348" width="58" height="34" rx="17" fill="#93c5fd"/>
+  <text x="906" y="370" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#1d4ed8">JSON</text>
+  <text x="996" y="370" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#1d4ed8">CSV</text>
+  <text x="1071" y="370" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#1d4ed8">TXT</text>
+  <text x="962" y="300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#e0edff">Capture, filter, and export entirely in-browser.</text>
+</svg>

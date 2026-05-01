@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" role="img" aria-label="Open Chat Archiver overview">
+  <rect width="1200" height="760" rx="28" fill="#f8fafc"/>
+
+  <rect x="64" y="72" width="420" height="612" rx="26" fill="#ffffff" stroke="#dbe3f0"/>
+  <text x="96" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" font-weight="750" fill="#0f172a">Popup capture flow</text>
+  <text x="96" y="148" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#475569">Live status, date filters, and one-click export.</text>
+
+  <rect x="96" y="182" width="356" height="112" rx="20" fill="#f8fbff" stroke="#dbe3f0"/>
+  <circle cx="130" cy="219" r="8" fill="#16a34a"/>
+  <text x="148" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Capturing: Weekend Camping Trip</text>
+  <text x="124" y="267" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="34" font-weight="750" fill="#1d4ed8">182</text>
+  <text x="124" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#64748b">captured</text>
+  <text x="246" y="267" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="34" font-weight="750" fill="#1d4ed8">147</text>
+  <text x="246" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#64748b">in range</text>
+
+  <rect x="96" y="322" width="228" height="48" rx="24" fill="#1d4ed8"/>
+  <text x="210" y="353" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">Stop capture</text>
+  <rect x="340" y="322" width="112" height="48" rx="24" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="396" y="353" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#334155">Clear</text>
+
+  <text x="96" y="420" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#475569">Date range</text>
+  <rect x="96" y="440" width="162" height="54" rx="16" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="274" y="440" width="162" height="54" rx="16" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="116" y="474" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#334155">2026-04-18</text>
+  <text x="294" y="474" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#334155">2026-04-19</text>
+
+  <text x="96" y="542" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#475569">Export formats</text>
+  <rect x="96" y="562" width="74" height="38" rx="19" fill="#1d4ed8"/>
+  <rect x="182" y="562" width="74" height="38" rx="19" fill="#dbeafe"/>
+  <rect x="268" y="562" width="74" height="38" rx="19" fill="#dbeafe"/>
+  <rect x="354" y="562" width="82" height="38" rx="19" fill="#dbeafe"/>
+  <text x="133" y="586" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">JSON</text>
+  <text x="219" y="586" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1d4ed8">CSV</text>
+  <text x="305" y="586" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1d4ed8">TXT</text>
+  <text x="395" y="586" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1d4ed8">HTML</text>
+
+  <rect x="548" y="72" width="588" height="612" rx="26" fill="#ffffff" stroke="#dbe3f0"/>
+  <text x="580" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" font-weight="750" fill="#0f172a">Export output</text>
+  <text x="580" y="148" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#475569">The same capture buffer can become JSON, CSV, TXT, or a standalone HTML transcript.</text>
+
+  <rect x="580" y="188" width="524" height="444" rx="22" fill="#f8fafc" stroke="#dbe3f0"/>
+  <text x="614" y="234" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" font-weight="750" fill="#0f172a">Weekend Camping Trip</text>
+  <text x="614" y="262" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#64748b">Exported 2026-04-22T14:03:10.412Z · 8 messages</text>
+
+  <rect x="614" y="296" width="284" height="80" rx="18" fill="#f1f5f9"/>
+  <text x="636" y="324" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#64748b">Ada Example · 2026-04-18T09:12:00.000Z</text>
+  <text x="636" y="354" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#0f172a">Hey, are we still good for Saturday?</text>
+
+  <rect x="786" y="394" width="286" height="96" rx="18" fill="#dbeafe"/>
+  <text x="808" y="422" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#64748b">You · 2026-04-18T09:14:12.000Z</text>
+  <text x="808" y="452" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#0f172a">Yes! I reserved site 14 at the state park.</text>
+  <text x="808" y="476" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#2563eb">thumbs up reaction</text>
+
+  <rect x="614" y="508" width="338" height="90" rx="18" fill="#f1f5f9"/>
+  <text x="636" y="536" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#64748b">Ada Example · 2026-04-18T09:16:40.000Z</text>
+  <text x="636" y="566" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#0f172a">Sharing the trail map so we're on the same page.</text>
+  <text x="636" y="590" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#475569">attachment: https://example.test/trail-map.pdf</text>
+
+  <rect x="580" y="700" width="170" height="28" rx="14" fill="#dbeafe"/>
+  <rect x="762" y="700" width="170" height="28" rx="14" fill="#dcfce7"/>
+  <rect x="944" y="700" width="160" height="28" rx="14" fill="#e2e8f0"/>
+  <text x="665" y="719" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d4ed8">Local only</text>
+  <text x="847" y="719" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803d">No tracking</text>
+  <text x="1024" y="719" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#475569">DOM visible data</text>
+</svg>

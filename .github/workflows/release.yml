@@ -1,0 +1,85 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate tag matches manifest version
+        run: |
+          set -eu
+          version="$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")"
+          test "${GITHUB_REF_NAME}" = "v${version}"
+
+      - name: Validate manifest + sample files
+        run: |
+          python3 -c "import json; json.load(open('manifest.json'))"
+          python3 -c "import json; json.load(open('sample-data/sample-conversation.json'))"
+          python3 -c "from pathlib import Path; required=['sample-data/sample-conversation.csv','sample-data/sample-conversation.txt','sample-data/sample-conversation.html']; missing=[p for p in required if not Path(p).exists()]; raise SystemExit(f'Missing sample files: {missing}' if missing else 0)"
+
+      - name: Regenerate icons and diff
+        run: |
+          python3 scripts/generate_icons.py
+          git diff --exit-code icons/ || {
+            echo "::error::Icons on disk do not match scripts/generate_icons.py output. Run: python3 scripts/generate_icons.py";
+            exit 1;
+          }
+
+      - name: Build release bundle
+        run: |
+          python3 scripts/build_release.py --out-dir dist
+
+      - name: Enforce no network APIs in extension code
+        run: |
+          set -eu
+          pattern='fetch\(|XMLHttpRequest|WebSocket\(|navigator\.sendBeacon|new EventSource'
+          if grep -E -n "$pattern" background.js content.js popup.js options.js; then
+            echo "::error::Disallowed network API usage detected in extension code. See CLAUDE.md."
+            exit 1
+          fi
+
+      - name: Enforce minimal host permissions
+        run: |
+          set -eu
+          if python3 -c "import json,sys; m=json.load(open('manifest.json')); hp=m.get('host_permissions',[]); bad=[h for h in hp if '<all_urls>' in h or h.startswith('*://')]; sys.exit(1 if bad else 0)"; then
+            echo "host_permissions are scoped - ok"
+          else
+            echo "::error::host_permissions must not include <all_urls> or *://*"
+            exit 1
+          fi
+
+      - name: Publish GitHub release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          version="${GITHUB_REF_NAME#v}"
+          bundle="dist/open-chat-archiver-v${version}.zip"
+          sums="dist/open-chat-archiver-v${version}-sha256.txt"
+          notes="dist/open-chat-archiver-v${version}-notes.md"
+
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "$bundle" "$sums" --clobber
+            gh release edit "${GITHUB_REF_NAME}" --title "Open Chat Archiver ${GITHUB_REF_NAME}" --notes-file "$notes"
+          else
+            gh release create "${GITHUB_REF_NAME}" "$bundle" "$sums" \
+              --title "Open Chat Archiver ${GITHUB_REF_NAME}" \
+              --notes-file "$notes"
+          fi
