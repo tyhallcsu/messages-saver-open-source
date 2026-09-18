@@ -34,6 +34,9 @@
     scrollsDone: 0,
     maxScrolls: 2000,
     lastKnownUrl: location.href,
+    conversationKey: null,
+    pendingConversationKey: null,
+    pendingThreadTitle: null,
   };
 
   const FINGERPRINT_KEYS = ["sender", "text", "timestamp"];
@@ -47,6 +50,15 @@
   }
 
   function todayIso() { return new Date().toISOString(); }
+
+  function conversationKeyFromUrl(href = location.href) {
+    try {
+      const url = new URL(href);
+      return `${url.origin}${url.pathname}`;
+    } catch {
+      return href;
+    }
+  }
 
   function logDebug(...args) {
     if (window[NS]?.debug) console.debug("[open-chat-archiver]", ...args);
@@ -203,6 +215,59 @@
     return added;
   }
 
+  function visibleFingerprints(container, settings, limit = 8) {
+    const prints = [];
+    for (const row of collectAllRows(container)) {
+      const msg = extractMessageFromRow(row, settings);
+      if (!msg) continue;
+      prints.push(fingerprint(msg));
+      if (prints.length >= limit) break;
+    }
+    return prints;
+  }
+
+  function maybeAdoptPendingConversation(container, settings) {
+    if (!state.pendingConversationKey) return true;
+
+    const visible = visibleFingerprints(container, settings);
+    if (!visible.length) return false;
+    if (state.messages.size && !visible.some((fp) => !state.messages.has(fp))) {
+      return false;
+    }
+
+    state.conversationKey = state.pendingConversationKey;
+    state.pendingConversationKey = null;
+    resetThreadBuffer(state.pendingThreadTitle || findThreadTitle());
+    state.pendingThreadTitle = null;
+    return true;
+  }
+
+  async function refreshCapture(container, settings) {
+    if (!maybeAdoptPendingConversation(container, settings)) return false;
+    await ingest(container, settings);
+    return true;
+  }
+
+  function attachObserver(container, settings) {
+    if (state.observer) {
+      state.observer.disconnect();
+    }
+    state.observer = new MutationObserver(async (mutations) => {
+      const hasRelevantChange = mutations.some((m) => {
+        if (m.addedNodes && m.addedNodes.length > 0) return true;
+        return Boolean(
+          state.pendingConversationKey &&
+          m.removedNodes &&
+          m.removedNodes.length > 0
+        );
+      });
+      if (hasRelevantChange) {
+        await refreshCapture(container, settings);
+      }
+    });
+    state.observer.observe(container, { childList: true, subtree: true });
+  }
+
   /* ---------------- filtering / export ---------------- */
 
   function asDateOrNull(value) {
@@ -248,6 +313,9 @@
     state.rootEl = container;
     state.threadTitle = findThreadTitle();
     state.lastKnownUrl = location.href;
+    state.conversationKey = conversationKeyFromUrl();
+    state.pendingConversationKey = null;
+    state.pendingThreadTitle = null;
 
     const settings = await chrome.storage.local.get([
       "captureReactions",
@@ -257,16 +325,8 @@
     ]);
     state.maxScrolls = Number.isFinite(settings.maxScrolls) ? settings.maxScrolls : 2000;
 
-    await ingest(container, settings);
-
-    state.observer = new MutationObserver(async (mutations) => {
-      // Only re-ingest when new child nodes appear.
-      const hasNew = mutations.some((m) => m.addedNodes && m.addedNodes.length > 0);
-      if (hasNew) {
-        await ingest(container, settings);
-      }
-    });
-    state.observer.observe(container, { childList: true, subtree: true });
+    await refreshCapture(container, settings);
+    attachObserver(container, settings);
 
     state.capturing = true;
     startPacerIfEnabled(settings.pacing);
@@ -280,6 +340,8 @@
       state.observer.disconnect();
       state.observer = null;
     }
+    state.pendingConversationKey = null;
+    state.pendingThreadTitle = null;
     stopPacer();
     stopUrlWatcher();
     return { ok: true };
@@ -290,6 +352,13 @@
     state.order.length = 0;
     state.scrollsDone = 0;
     return { ok: true };
+  }
+
+  function resetThreadBuffer(threadTitle) {
+    state.messages.clear();
+    state.order.length = 0;
+    state.scrollsDone = 0;
+    state.threadTitle = threadTitle || null;
   }
 
   /* ---------------- optional paced auto-scroll ---------------- */
@@ -325,31 +394,43 @@
     state.urlWatcher = setInterval(async () => {
       if (location.href === state.lastKnownUrl) return;
 
-      state.lastKnownUrl = location.href;
-      if (!state.capturing) return;
+      if (!state.capturing) {
+        state.lastKnownUrl = location.href;
+        return;
+      }
 
       // Thread switched — capture continues but re-anchor to the new container.
+      const nextThreadTitle = findThreadTitle();
+      const nextConversationKey = conversationKeyFromUrl();
       const newContainer = findThreadContainer();
-      if (!newContainer || newContainer === state.scroller) return;
-
-      if (state.observer) state.observer.disconnect();
-      state.scroller = newContainer;
-      state.rootEl = newContainer;
-      state.threadTitle = findThreadTitle();
+      if (!newContainer) {
+        state.pendingConversationKey = nextConversationKey;
+        state.pendingThreadTitle = nextThreadTitle;
+        return;
+      }
 
       const settings = await chrome.storage.local.get([
         "captureReactions",
         "captureAttachmentRefs",
       ]);
-      await ingest(newContainer, settings);
 
-      state.observer = new MutationObserver(async (mutations) => {
-        const hasNew = mutations.some((m) => m.addedNodes && m.addedNodes.length > 0);
-        if (hasNew) {
-          await ingest(newContainer, settings);
-        }
-      });
-      state.observer.observe(newContainer, { childList: true, subtree: true });
+      state.scroller = newContainer;
+      state.rootEl = newContainer;
+
+      if (nextConversationKey !== state.conversationKey) {
+        state.pendingConversationKey = nextConversationKey;
+        state.pendingThreadTitle = nextThreadTitle;
+      } else {
+        state.pendingConversationKey = null;
+        state.pendingThreadTitle = null;
+        state.threadTitle = nextThreadTitle;
+      }
+
+      const synced = await refreshCapture(newContainer, settings);
+      attachObserver(newContainer, settings);
+      if (synced && !state.pendingConversationKey) {
+        state.lastKnownUrl = location.href;
+      }
     }, 1500);
   }
 
