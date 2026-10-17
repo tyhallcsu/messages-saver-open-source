@@ -153,7 +153,6 @@ jobs:
             options.html options.css options.js \
             icons \
             LICENSE \
-            README.md \
             PRIVACY.md
           ls -la "$ASSET"
           sha256=$(shasum -a 256 "$ASSET" | awk '{print $1}')
