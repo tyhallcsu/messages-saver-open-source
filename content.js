@@ -32,6 +32,9 @@
     pacer: null,
     urlWatcher: null,
     scrollsDone: 0,
+    settings: null,
+    startRequest: 0,
+    autoScrollStatus: "off",
     maxScrolls: 2000,
     lastKnownUrl: location.href,
     conversationKey: null,
@@ -76,7 +79,7 @@
     ];
     for (const c of candidates) {
       if (!c.isConnected) continue;
-      if (c.scrollHeight > c.clientHeight + 20) return c;
+      if (c.clientHeight > 0 && c.querySelector('[role="row"], [role="listitem"], [role="article"]')) return c;
     }
     // Last resort: look for the biggest scrollable region inside main.
     const main = document.querySelector('[role="main"]');
@@ -95,6 +98,19 @@
       }
     }
     return best;
+  }
+
+  function findThreadScroller(container) {
+    // A chat grid can overflow inside a different element that owns scrolling.
+    // Dimensions alone do not establish that an element can actually scroll.
+    const row = container.querySelector('[role="row"], [role="listitem"], [role="article"]');
+    for (let el = row?.parentElement || container; el; el = el.parentElement) {
+      if (/^(auto|scroll|overlay)$/.test(getComputedStyle(el).overflowY) &&
+          el.clientHeight > 0 && el.scrollHeight > el.clientHeight + 2) {
+        return el;
+      }
+    }
+    return null;
   }
 
   function findThreadTitle() {
@@ -199,7 +215,7 @@
     return Array.from(container.children);
   }
 
-  async function ingest(container, settings) {
+  function ingest(container, settings) {
     const rows = collectAllRows(container);
     let added = 0;
     for (const row of rows) {
@@ -242,30 +258,27 @@
     return true;
   }
 
-  async function refreshCapture(container, settings) {
+  function refreshCapture(container, settings) {
     if (!maybeAdoptPendingConversation(container, settings)) return false;
-    await ingest(container, settings);
+    ingest(container, settings);
     return true;
   }
 
   function attachObserver(container, settings) {
-    if (state.observer) {
-      state.observer.disconnect();
-    }
-    state.observer = new MutationObserver(async (mutations) => {
-      const hasRelevantChange = mutations.some((m) => {
-        if (m.addedNodes && m.addedNodes.length > 0) return true;
-        return Boolean(
-          state.pendingConversationKey &&
-          m.removedNodes &&
-          m.removedNodes.length > 0
-        );
-      });
-      if (hasRelevantChange) {
-        await refreshCapture(container, settings);
-      }
+    if (state.observer) state.observer.disconnect();
+    state.observer = new MutationObserver(() => {
+      // Ignore deliveries from a detached root or while the next thread loads.
+      if (!state.capturing || state.rootEl !== container || !container.isConnected) return;
+      if (conversationKeyFromUrl() !== state.conversationKey || state.pendingConversationKey) return;
+      refreshCapture(container, settings);
     });
-    state.observer.observe(container, { childList: true, subtree: true });
+    state.observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["aria-label", "datetime", "data-timestamp", "href", "src"],
+    });
   }
 
   /* ---------------- filtering / export ---------------- */
@@ -305,36 +318,41 @@
 
   async function startCapture() {
     if (state.capturing) return { ok: true };
+    const request = ++state.startRequest;
+    const settings = await chrome.storage.local.get([
+      "captureReactions", "captureAttachmentRefs", "pacing", "maxScrolls",
+    ]);
+    if (request !== state.startRequest) return { ok: false, error: "Capture start cancelled." };
     const container = findThreadContainer();
     if (!container) {
       return { ok: false, error: "Could not find a conversation on this page. Open a chat and try again." };
     }
-    state.scroller = container;
+    state.settings = settings;
+    state.scroller = findThreadScroller(container);
     state.rootEl = container;
     state.threadTitle = findThreadTitle();
     state.lastKnownUrl = location.href;
-    state.conversationKey = conversationKeyFromUrl();
+    const conversationKey = conversationKeyFromUrl();
+    if (state.conversationKey && state.conversationKey !== conversationKey) {
+      resetThreadBuffer(state.threadTitle);
+    }
+    state.conversationKey = conversationKey;
     state.pendingConversationKey = null;
     state.pendingThreadTitle = null;
-
-    const settings = await chrome.storage.local.get([
-      "captureReactions",
-      "captureAttachmentRefs",
-      "pacing",
-      "maxScrolls",
-    ]);
-    state.maxScrolls = Number.isFinite(settings.maxScrolls) ? settings.maxScrolls : 2000;
-
-    await refreshCapture(container, settings);
-    attachObserver(container, settings);
-
+    state.maxScrolls = Number.isFinite(settings.maxScrolls) && settings.maxScrolls >= 0
+      ? Math.floor(settings.maxScrolls) : 2000;
+    // The limit applies to each Start/Resume session, not the lifetime of the tab.
+    state.scrollsDone = 0;
     state.capturing = true;
+    refreshCapture(container, settings);
+    attachObserver(container, settings);
     startPacerIfEnabled(settings.pacing);
     startUrlWatcher();
     return { ok: true };
   }
 
   function stopCapture() {
+    state.startRequest++;
     state.capturing = false;
     if (state.observer) {
       state.observer.disconnect();
@@ -343,6 +361,7 @@
     state.pendingConversationKey = null;
     state.pendingThreadTitle = null;
     stopPacer();
+    state.autoScrollStatus = "stopped";
     stopUrlWatcher();
     return { ok: true };
   }
@@ -351,6 +370,7 @@
     state.messages.clear();
     state.order.length = 0;
     state.scrollsDone = 0;
+    if (state.capturing) startPacerIfEnabled(state.settings.pacing);
     return { ok: true };
   }
 
@@ -359,6 +379,7 @@
     state.order.length = 0;
     state.scrollsDone = 0;
     state.threadTitle = threadTitle || null;
+    if (state.capturing) startPacerIfEnabled(state.settings.pacing);
   }
 
   /* ---------------- optional paced auto-scroll ---------------- */
@@ -368,15 +389,45 @@
   function startPacerIfEnabled(pacing) {
     stopPacer();
     const ms = PACING_MS[pacing] || 0;
-    if (!ms || !state.scroller) return;
+    state.autoScrollStatus = ms ? "running" : "off";
+    if (!ms) return;
     state.pacer = setInterval(() => {
-      if (!state.capturing || !state.scroller) return;
-      if (state.scrollsDone >= state.maxScrolls) { stopPacer(); return; }
-      // Scroll upward to load older messages. If we're already at the top,
-      // stop pacing — nothing more to load.
-      if (state.scroller.scrollTop <= 2) { stopPacer(); return; }
-      state.scroller.scrollTop = Math.max(0, state.scroller.scrollTop - state.scroller.clientHeight * 0.9);
-      state.scrollsDone++;
+      if (!state.capturing) return;
+      if (state.scrollsDone >= state.maxScrolls) {
+        state.autoScrollStatus = "limit";
+        stopPacer();
+        return;
+      }
+      if (!state.rootEl?.isConnected || state.pendingConversationKey ||
+          conversationKeyFromUrl() !== state.conversationKey) {
+        state.autoScrollStatus = "waiting-container";
+        return;
+      }
+      state.scroller = findThreadScroller(state.rootEl);
+      if (!state.scroller) {
+        state.autoScrollStatus = "waiting";
+        return;
+      }
+      refreshCapture(state.rootEl, state.settings);
+      const scroller = state.scroller;
+      const distance = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+      // Reversed flex lists use negative scrollTop values for older messages.
+      const reversed = getComputedStyle(scroller).flexDirection === "column-reverse";
+      const top = reversed ? -distance : 0;
+      if (scroller.scrollTop <= top + 2) {
+        // At the loaded boundary, the host may still be fetching older rows.
+        // Keep the timer and observer alive; this is not proof of completeness.
+        state.autoScrollStatus = "waiting";
+        return;
+      }
+      const before = scroller.scrollTop;
+      scroller.scrollTop = Math.max(top, before - scroller.clientHeight * 0.9);
+      if (Math.abs(scroller.scrollTop - before) > 1) {
+        state.scrollsDone++;
+        state.autoScrollStatus = "running";
+      } else {
+        state.autoScrollStatus = "waiting";
+      }
     }, ms);
   }
 
@@ -391,44 +442,26 @@
 
   function startUrlWatcher() {
     if (state.urlWatcher) return;
-    state.urlWatcher = setInterval(async () => {
-      if (location.href === state.lastKnownUrl) return;
-
-      if (!state.capturing) {
-        state.lastKnownUrl = location.href;
-        return;
-      }
-
-      // Thread switched — capture continues but re-anchor to the new container.
-      const nextThreadTitle = findThreadTitle();
+    state.urlWatcher = setInterval(() => {
+      if (!state.capturing) return;
       const nextConversationKey = conversationKeyFromUrl();
-      const newContainer = findThreadContainer();
-      if (!newContainer) {
-        state.pendingConversationKey = nextConversationKey;
-        state.pendingThreadTitle = nextThreadTitle;
-        return;
-      }
-
-      const settings = await chrome.storage.local.get([
-        "captureReactions",
-        "captureAttachmentRefs",
-      ]);
-
-      state.scroller = newContainer;
-      state.rootEl = newContainer;
-
       if (nextConversationKey !== state.conversationKey) {
         state.pendingConversationKey = nextConversationKey;
-        state.pendingThreadTitle = nextThreadTitle;
+        state.pendingThreadTitle = findThreadTitle();
       } else {
         state.pendingConversationKey = null;
         state.pendingThreadTitle = null;
-        state.threadTitle = nextThreadTitle;
       }
-
-      const synced = await refreshCapture(newContainer, settings);
-      attachObserver(newContainer, settings);
-      if (synced && !state.pendingConversationKey) {
+      // React can replace the list or its scroll parent without changing URL.
+      // Retry even if the replacement is temporarily absent.
+      const container = findThreadContainer();
+      if (!container) return;
+      state.scroller = findThreadScroller(container);
+      if (state.rootEl !== container) {
+        state.rootEl = container;
+        attachObserver(container, state.settings);
+      }
+      if (refreshCapture(container, state.settings)) {
         state.lastKnownUrl = location.href;
       }
     }, 1500);
@@ -450,6 +483,9 @@
             sendResponse({
               ok: true,
               capturing: state.capturing,
+              autoScrollStatus: state.autoScrollStatus,
+              scrollsDone: state.scrollsDone,
+              maxScrolls: state.maxScrolls,
               total: state.messages.size,
               filteredInRange: filteredMessages().length,
               threadTitle: state.threadTitle || findThreadTitle(),
@@ -507,6 +543,9 @@
     // Exposed read-only helpers for power users debugging in devtools.
     peek: () => ({
       capturing: state.capturing,
+      autoScrollStatus: state.autoScrollStatus,
+      scrollsDone: state.scrollsDone,
+      maxScrolls: state.maxScrolls,
       total: state.messages.size,
       threadTitle: state.threadTitle,
     }),

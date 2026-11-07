@@ -30,7 +30,15 @@ Thank you for considering a contribution!
 
 ## Testing your change
 
-There is no automated test suite yet. Manual smoke test:
+Run the dependency-free capture regression suite (Node 20+):
+
+```bash
+node --test scripts/capture.test.cjs
+```
+
+It uses synthetic DOM fixtures and does not access a browser session or
+make network requests. The same suite runs in the shared CI validation
+workflow. Also perform the manual smoke test:
 
 1. Load the unpacked extension.
 2. Open a real Messenger conversation.
