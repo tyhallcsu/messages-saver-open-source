@@ -40,6 +40,9 @@ jobs:
             node --check "$f"
           done
 
+      - name: Capture regression tests (synthetic DOM, no network)
+        run: node --test scripts/capture.test.cjs
+
       - name: Verify every manifest path exists on disk
         run: |
           node -e '

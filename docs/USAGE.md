@@ -196,9 +196,22 @@ keep the popup open — the counter refreshes once per second.
 
 ### 5d. When have I scrolled enough?
 
-Watch the **Captured** counter. When it stops climbing for ~10 seconds
-even though you're still scrolling, you've reached the top of the
-conversation (or the host site is refusing to load more).
+Watch the **Captured** counter and the popup status. A pause at the top of
+currently loaded messages does **not** establish that the whole history has
+been captured. The extension keeps observing while Messenger loads older
+rows and resumes auto-scrolling when the list can move again.
+
+- **Waiting for older messages:** leave the conversation open; if the site
+  remains idle, try a small manual scroll down and back up.
+- **Waiting for conversation:** the page is replacing/loading its message
+  list. Capture automatically reattaches when the list returns.
+- **Auto-scroll limit reached:** manual capture remains active. Click
+  **Stop capture**, then **Resume capture** to start a new scroll budget
+  without clearing this conversation's captured messages.
+
+Verify the oldest visible message yourself before treating an export as
+complete. The extension cannot retrieve history that Messenger does not
+render.
 
 ---
 
@@ -359,10 +372,13 @@ When a new release is published:
    live in `chrome.storage.local`, scoped to the loaded copy of the
    extension. Replacing the folder usually preserves them, but capture
    them once just in case.
-2. Pull or download the new version.
-3. Go to `chrome://extensions` → click the **Reload** circular-arrow
+2. **Export the current capture before updating or reloading.** The message
+   buffer lives only in the tab; a page reload clears it.
+3. Pull or download the new version.
+4. Go to `chrome://extensions` → click the **Reload** circular-arrow
    button on the Open Chat Archiver card.
-4. (If loaded from a fresh folder) **Remove** the old card and **Load
+5. Reload the Messenger conversation tab to load the updated content script.
+6. (If loaded from a fresh folder) **Remove** the old card and **Load
    unpacked** the new folder. Re-pin the icon if needed.
 
 ---

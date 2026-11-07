@@ -46,10 +46,13 @@ Runs in the tab of every supported URL. Responsibilities:
    - Reactions: descendants whose `aria-label` mentions "react".
    - Attachments: `a[href]` and `img[src]` with `http(s):` URLs.
 3. **De-duplicate** via a fingerprint built from `sender | text | timestamp`.
-4. **Observe** `childList + subtree` mutations on the container so
-   messages that fade in while the user scrolls get captured.
-5. **Watch URL changes** (SPA navigation) and re-anchor to the new
-   thread container automatically.
+4. **Observe** child-list, text-node, and relevant accessible-attribute
+   mutations so recycled rows and late-rendered content are captured.
+5. **Watch the URL and message container** every 1.5 seconds. Re-anchor
+   after a DOM replacement even when the URL stays the same, and retry
+   when the container is temporarily absent. The scrollable ancestor is
+   resolved separately from the semantic message grid. At the loaded top
+   boundary, keep capture and the pacing timer alive for delayed history.
 6. **Respond to popup messages**:
    `GET_STATUS`, `START_CAPTURE`, `STOP_CAPTURE`, `CLEAR`, `SET_FILTER`,
    `EXPORT`.

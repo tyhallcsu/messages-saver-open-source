@@ -125,7 +125,16 @@ async function refreshStatus() {
   $("filtered").textContent = res.filteredInRange ?? res.total ?? 0;
 
   if (state.capturing) {
-    setStatus(state.threadTitle ? `Capturing: ${state.threadTitle}` : "Capturing…", "active");
+    const captureLabel = state.threadTitle ? `Capturing: ${state.threadTitle}` : "Capturing";
+    const scrollLabels = {
+      off: "manual scrolling",
+      running: "auto-scrolling",
+      waiting: "waiting for older messages; scroll up manually if needed",
+      "waiting-container": "waiting for conversation",
+      limit: `auto-scroll limit reached (${res.scrollsDone}/${res.maxScrolls}); Stop then Resume to continue`,
+    };
+    const detail = scrollLabels[res.autoScrollStatus];
+    setStatus(detail ? `${captureLabel} — ${detail}` : captureLabel, "active");
     $("toggleCapture").textContent = "Stop capture";
   } else {
     setStatus(state.threadTitle ? `Idle: ${state.threadTitle}` : "Idle", null);

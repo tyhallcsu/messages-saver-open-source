@@ -7,6 +7,17 @@ and this project follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Keep paced capture alive while older messages load at the current top
+  boundary, and resolve the actual scroll owner of the message list.
+- Reattach capture after message-list replacements without URL changes;
+  observe recycled text nodes and late-rendered accessible metadata.
+- Reset the auto-scroll budget on Resume and show waiting/limit states
+  in the popup instead of silently stopping auto-scroll.
+
+### Added
+- Dependency-free capture regression tests, included in the CI gate.
+
 ## [0.1.2] — 2026-05-01
 
 ### Added
